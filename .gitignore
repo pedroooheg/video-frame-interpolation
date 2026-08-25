@@ -1,0 +1,32 @@
+# Arquivos auxiliares do LaTeX
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.lot
+*.out
+*.toc
+*.log
+*.synctex.gz
+*.bcf
+*.run.xml
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.swp
+*~
+
+# Diretórios de compilação
+_build/
+out/
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
