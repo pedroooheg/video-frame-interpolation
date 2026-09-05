@@ -24,22 +24,25 @@
 \usepackage[utf8]{inputenc}         % Codificação do documento
 \usepackage{lastpage}               % Usado pela Ficha catalográfica
 \usepackage{indentfirst}            % Indenta o primeiro parágrafo
-\usepackage{color}                  % Controle de cores
+\usepackage[table,x11names]{xcolor} % Controle de cores avançado (necessário para \rowcolor em tabelas)
 \usepackage{graphicx}               % Inclusão de gráficos
 \usepackage{microtype}              % Melhorias de justificação
 \usepackage{float}                  % Para posicionamento de figuras
-\usepackage{booktabs}               % Tabelas profissionais
+\usepackage{booktabs}               % Tabelas profissionais (\toprule, \midrule, \bottomrule)
 \usepackage{multirow}               % Células mescladas em tabelas
 \usepackage{longtable}              % Tabelas longas
+\usepackage{tabularx}               % Tabelas com largura ajustável
+\usepackage{array}                  % Utilitários avançados de colunas para tabelas
+\usepackage{ragged2e}               % Melhora o alinhamento de texto dentro das tabelas
 \usepackage{amsmath,amssymb}        % Símbolos matemáticos
 \usepackage{pgfgantt}               % Diagramas de Gantt
 \usepackage[brazilian,hyperpageref]{backref}  % Páginas com citações
 \usepackage[alf]{abntex2cite}       % Citações ABNT
-\usepackage{tikz}
-\usepackage{tabularx}
-\usetikzlibrary{shapes.geometric, arrows, positioning, calc}
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows.meta, positioning}
+\usepackage{tikz}                   % Gráficos e diagramas TikZ
+\usetikzlibrary{shapes.geometric, arrows, arrows.meta, positioning, calc}
+
+% Definição do novo tipo de coluna X com texto alinhado à esquerda para evitar Underfull \hbox
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
 
 % ---------------------------------------------------------------
 % CONFIGURAÇÕES DO PDF
@@ -129,6 +132,64 @@ A crescente disseminação de dispositivos de exibição com elevadas taxas de a
 \textbf{Palavras-chave}: Interpolação de Quadros de Vídeo. Convoluções Adaptativas Separáveis. C++. CUDA. Otimização de VRAM. SepConv.
 \end{resumo}
 
+\begin{resumo}[Abstract]
+ \begin{otherlanguage*}{english}
+The growing dissemination of display devices with high refresh rates (60 Hz to 144 Hz) has highlighted the temporal limitations of audiovisual content captured at traditional frame rates of 24 FPS to 30 FPS. To mitigate visual artifacts and enhance temporal smoothness, Video Frame Interpolation (VFI) aims to artificially synthesize intermediate frames. Although dense optical flow-based approaches, such as the RAFT model, achieve high accuracy, their excessive computational complexity and dependence on high-level frameworks (PyTorch) constrain their deployment under severe hardware restrictions. As an efficient alternative, Adaptive Separable Convolutions model frame synthesis as adaptive local filtering, factorizing $N \times N$ two-dimensional kernels into two $1D$ line-separable filters, thereby reducing arithmetic complexity from $O(N^2)$ to $O(2N)$ per pixel. This work presents an experimental analysis of the SepConv model through the implementation of a native C++ and CUDA inference engine, completely decoupled from training ecosystems. The proposed pipeline integrates the OpenCV library for data input/output, the ONNX Runtime C++ API for extracting motion vectors, and custom CUDA kernels for the parallel execution of convolutions maintained directly within video memory (VRAM). Experimental validation evaluates the trade-off between VRAM memory consumption (measured via NVML, focusing on consumer-grade 8 GB GPUs), execution latency in milliseconds, and visual fidelity (quantified using PSNR, SSIM, and VMAF on the Vimeo-90K dataset). The results aim to demonstrate the technical viability of granular memory management to enable high-definition video frame interpolation on resource-constrained commercial hardware.
+
+   \vspace{\onelineskip}
+
+   \noindent
+   \textbf{Keywords}: Video Frame Interpolation. Adaptive Separable Convolutions. C++. CUDA. VRAM Optimization. SepConv.
+ \end{otherlanguage*}
+\end{resumo}
+
+% ---------------------------------------------------------------
+% LISTA DE ABREVIATURAS E SIGLAS
+% ---------------------------------------------------------------
+\pdfbookmark[0]{Lista de Abreviaturas e Siglas}{loas}
+\chapter*{Lista de Abreviaturas e Siglas}
+
+\noindent A lista a seguir reúne, em ordem alfabética, as abreviaturas e siglas utilizadas neste trabalho, acompanhadas de seus respectivos significados.
+
+\vspace{\onelineskip}
+
+\begin{table}[htb]
+\centering
+\begin{tabularx}{\textwidth}{@{}p{5.0cm}Y@{}}
+\toprule
+\textbf{Abreviatura/Sigla} & \textbf{Significado} \\
+\midrule
+ABNT  & Associação Brasileira de Normas Técnicas \\
+ALU   & \textit{Arithmetic Logic Unit} (Unidade Lógica e Aritmética) \\
+API   & \textit{Application Programming Interface} (Interface de Programação de Aplicações) \\
+CLI   & \textit{Command-Line Interface} (Interface de Linha de Comando) \\
+CPU   & \textit{Central Processing Unit} (Unidade Central de Processamento) \\
+CUDA  & \textit{Compute Unified Device Architecture} \\
+FLOPs & \textit{Floating Point Operations} (Operações de Ponto Flutuante) \\
+FPS   & \textit{Frames Per Second} (Quadros por Segundo) \\
+GPGPU & \textit{General-Purpose Computing on Graphics Processing Units} \\
+GPU   & \textit{Graphics Processing Unit} (Unidade de Processamento Gráfico) \\
+I/O   & \textit{Input/Output} (Entrada e Saída) \\
+MSE   & \textit{Mean Squared Error} (Erro Quadrático Médio) \\
+NVML  & \textit{NVIDIA Management Library} \\
+ONNX  & \textit{Open Neural Network Exchange} \\
+PCIe  & \textit{Peripheral Component Interconnect Express} \\
+PSNR  & \textit{Peak Signal-to-Noise Ratio} \\
+RAFT  & \textit{Recurrent All-Pairs Field Transforms} \\
+RAM   & \textit{Random Access Memory} \\
+SIMT  & \textit{Single Instruction, Multiple Threads} \\
+SM    & \textit{Streaming Multiprocessor} \\
+SSIM  & \textit{Structural Similarity Index} \\
+TCC   & Trabalho de Conclusão de Curso \\
+VFI   & \textit{Video Frame Interpolation} (Interpolação de Quadros de Vídeo) \\
+VMAF  & \textit{Video Multimethod Assessment Fusion} \\
+VRAM  & \textit{Video Random Access Memory} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\cleardoublepage
+
 % ---------------------------------------------------------------
 % SUMÁRIO
 % ---------------------------------------------------------------
@@ -150,10 +211,12 @@ A crescente disseminação de dispositivos de exibição com elevadas taxas de a
 
 Historicamente, os sistemas de captura e exibição de imagens em movimento foram limitados pela capacidade mecânica e elétrica dos dispositivos da época. Durante a consolidação do cinema sonoro no início do século XX, a taxa de aproximadamente 24 quadros por segundo (FPS) tornou-se um padrão industrial por representar um equilíbrio entre fluidez perceptiva e custo de armazenamento e reprodução do filme físico \cite{Bordwell2016}. Taxas nessa faixa passaram a ser suficientes para produzir a percepção de movimento contínuo ao sistema visual humano, reduzindo a percepção de descontinuidade temporal durante a projeção \cite{Watkinson2009}.
 
-Com a evolução tecnológica dos dispositivos de exibição, monitores e televisores modernos passaram a operar em frequências significativamente superiores, variando entre 60 Hz e 144 Hz. Entretanto, grande parte do conteúdo audiovisual disponível ainda permanece limitada às taxas tradicionais de captura, como 24 FPS ou 30 FPS, criando uma discrepância entre a capacidade de atualização do hardware atual e a quantidade de informação temporal presente no vídeo original. Essa diferença entre a taxa de amostragem temporal do conteúdo original e a frequência de atualização do dispositivo de exibição resulta no fenômeno conhecido como subamostragem temporal. De acordo com Watkinson (2009) e Szeliski (2022), a incapacidade de fornecer amostras intermediárias suficientes durante movimentos rápidos reduz a percepção de continuidade temporal pelo sistema visual humano, induzindo a artefatos perceptuais como tremulação de movimento (\textit{motion judder}), borramento dinâmico e quebra na percepção de fluidez contínua.
+Com a evolução tecnológica dos dispositivos de exibição, monitores e televisores modernos passaram a operar em frequências significativamente superiores, variando entre 60 Hz e 144 Hz. Entretanto, grande parte do conteúdo audiovisual disponível ainda permanece limitada às taxas tradicionais de captura, como 24 FPS ou 30 FPS, criando uma discrepância entre a capacidade de atualização do hardware atual e a quantidade de informação temporal presente no vídeo original. Essa diferença entre a taxa de amostragem temporal do conteúdo original e a frequência de atualização do dispositivo de exibição resulta no fenômeno conhecido como subamostragem temporal. De acordo com \citeonline{Watkinson2009} e \citeonline{Szeliski2022}, a incapacidade de fornecer amostras intermediárias suficientes durante movimentos rápidos reduz a percepção de continuidade temporal pelo sistema visual humano, induzindo a artefatos perceptuais como tremulação de movimento (\textit{motion judder}), borramento dinâmico e quebra na percepção de fluidez contínua.
 
-Nesse contexto, a Interpolação de Quadros de Vídeo (VFI -- Video Frame Interpolation) surge como uma técnica essencial para sintetizar quadros intermediários artificialmente, aumentando a fluidez temporal do conteúdo exibido. Tradicionalmente, a literatura divide as abordagens de VFI em métodos baseados em fluxo óptico, como o modelo RAFT \cite{Teed2020}, e métodos baseados em kernels. Embora modelos de aprendizado profundo tenham atingido patamares elevados de precisão, eles frequentemente demandam recursos computacionais extensivos e dependem de frameworks pesados, o que limita sua aplicação em cenários de hardware restrito ou escassez de memória RAM e VRAM.
-Para mitigar a alta demanda de recursos computacionais, representada pelo elevado volume de operações de ponto flutuante (FLOPs), pelo esgotamento do armazenamento de tensores na memória de vídeo (VRAM) e pela alta latência de execução ---, a literatura recente busca alternativas mais eficientes aos modelos tradicionais de fluxo óptico. Em cenários de hardware restrito, típicos de computadores pessoais e dispositivos de consumo doméstico dotados de GPUs comerciais limitadas a 8 GB de VRAM, a execução de ecossistemas densos baseados em \textit{frameworks} de alto nível (como PyTorch) torna-se inviável em altas resoluções. Nesse contexto, Niklaus et al. (2017) propuseram a utilização de Convoluções Adaptativas Separáveis, técnica que decompoe \textit{kernels} bidimensionais $N \times N$ em pares de filtros unidimensionais $1D$, reduzindo a complexidade computacional de $O(N^2)$ para $O(2N)$. A implementação dessa etapa de inferência em linguagem de baixo nível (C++/CUDA) possibilita um controle granular sobre o gerenciamento de memória gráfica, permitindo isolar a eficiência do algoritmo e testar sua viabilidade em computadores comuns.
+Nesse contexto, a Interpolação de Quadros de Vídeo (VFI -- \textit{Video Frame Interpolation}) surge como uma técnica essencial para sintetizar quadros intermediários artificialmente, aumentando a fluidez temporal do conteúdo exibido. Tradicionalmente, a literatura divide as abordagens de VFI em métodos baseados em fluxo óptico, como o modelo RAFT \cite{Teed2020}, e métodos baseados em \textit{kernels}. Embora modelos de aprendizado profundo tenham atingido patamares elevados de precisão, eles frequentemente demandam recursos computacionais extensivos e dependem de \textit{frameworks} pesados, o que limita sua aplicação em cenários de hardware restrito ou escassez de memória RAM e VRAM.
+
+Para mitigar a alta demanda de recursos computacionais --- representada pelo elevado volume de operações de ponto flutuante (FLOPs), pelo esgotamento do armazenamento de tensores na memória de vídeo (VRAM) e pela alta latência de execução ---, a literatura recente busca alternativas mais eficientes aos modelos tradicionais de fluxo óptico. Em cenários de hardware restrito, típicos de computadores pessoais e dispositivos de consumo doméstico dotados de GPUs comerciais limitadas a 8 GB de VRAM, a execução de ecossistemas densos baseados em \textit{frameworks} de alto nível (como PyTorch) torna-se inviável em altas resoluções. Nesse contexto, \citeonline{Niklaus2017} propuseram a utilização de Convoluções Adaptativas Separáveis, técnica que decompõe \textit{kernels} bidimensionais $N \times N$ em pares de filtros unidimensionais $1D$, reduzindo a complexidade computacional de $O(N^2)$ para $O(2N)$. A implementação dessa etapa de inferência em linguagem de baixo nível (C++/CUDA) possibilita um controle granular sobre o gerenciamento de memória gráfica, permitindo isolar a eficiência do algoritmo e testar sua viabilidade em computadores comuns.
+
 Diante desse gargalo tecnológico entre a necessidade de fluidez em computadores pessoais e as limitações físicas de memória do hardware de consumo, formaliza-se a seguinte \textbf{hipótese científica}: postula-se que a separabilidade matemática dos \textit{kernels}, quando associada a um \textit{pipeline} de inferência nativo em C++ e CUDA (desacoplado de \textit{frameworks} de treinamento), reduz o pico de consumo de VRAM e a latência de execução em comparação às implementações de alto nível em Python/PyTorch. A partir dessa premissa, o presente trabalho tem como objetivo avaliar a viabilidade técnica do processamento de vídeos em alta definição sob o limite de 8 GB de VRAM, investigando o equilíbrio entre a eficiência computacional no hardware do usuário final e a fidelidade visual dos quadros sintetizados.
 
 % ---------------------------------------------------------------
@@ -168,36 +231,52 @@ Entretanto, a implantação prática desses algoritmos enfrenta barreiras atrela
 
 % ---------------------------------------------------------------
 
-\section{Justificativa}
-\label{sec:justificativa}
+% ---------------------------------------------------------------
+\section{Formulação do problema}
+\label{sec:problema}
 
-A escolha pela implementação de algoritmos de interpolação baseados em Convoluções Adaptativas Separáveis justifica-se, primordialmente, pela necessidade de viabilizar a fluidez visual em sistemas de computação pessoal com recursos de memória limitados. Enquanto as abordagens de convolução espacial completa exigem uma complexidade quadrática de $N^2$ operações por pixel para a síntese de quadros, a técnica de decomposição em \textit{kernels} unidimensionais reduz esse custo para uma ordem linear de $2N$ \cite{Niklaus2017}. Essa eficiência matemática busca diminuir o tempo de execução e, essencialmente, o \textit{footprint} (consumo espacial) na memória de vídeo (VRAM), viabilizando que hardwares de consumo processem sequências de vídeo em alta definição sem estourar os limites da placa gráfica.
+Apesar da elevada precisão atingida por modelos modernos de Interpolação de Quadros de Vídeo (VFI), a dependência de \textit{frameworks} de alto nível (como PyTorch) e a alta demanda por memória de vídeo impedem sua execução fluida e eficiente em computadores pessoais munidos de GPUs comerciais. Diante dessa limitação física e arquitetural, formula-se a seguinte questão de pesquisa:
 
-A delimitação experimental em GPUs de consumo dotadas de 8 GB de memória VRAM fundamenta-se na ampla representatividade desse perfil de hardware no mercado do usuário final. Segundo os levantamentos da \textit{Steam Hardware \& Software Survey} \cite{SteamSurvey2026}, placas de vídeo com 8 GB de VRAM representam aproximadamente 26\% das configurações ativas na plataforma, constituindo a capacidade individual mais expressiva entre os usuários domésticos. Embora modelos de alto desempenho com 16 GB ou mais tenham registrado crescimento recente, a faixa de 8 GB permanece como a principal barreira física para a execução de modelos densos de inteligência artificial em ambientes não corporativos.
-
-Sob a perspectiva da Ciência da Computação e da Engenharia de Software, a pesquisa justifica-se pela investigação do gargalo de abstração imposto por \textit{frameworks} de alto nível (como Python/PyTorch). Embora adequados para prototipagem e treinamento, esses ecossistemas introduzem \textit{overheads} significativos decorrentes do gerenciamento dinâmico de memória, da alocação redundante de tensores temporários e da camada de interpretação do runtime. Ao transpor a etapa de inferência do modelo SepConv diretamente para a linguagem C++, integrada ao ecossistema nativo ONNX Runtime e a \textit{kernels} customizados em CUDA, é possível exercer um controle determinístico sobre a alocação e transferência de ponteiros na VRAM. 
-
-Dessa forma, o trabalho busca demonstrar como o gerenciamento granular de hardware e a otimização algorítmica de baixo nível conseguem mitigar limitações físicas de memória gráfica, oferecendo um ponto de equilíbrio viável entre a qualidade perceptual da imagem e o desempenho computacional em sistemas comerciais.
+\begin{quote}
+\textit{Em que medida a implementação de um motor de inferência nativo em C++ e CUDA para o modelo SepConv, fundamentado na separabilidade matemática de \textit{kernels} $O(N)$, é capaz de reduzir a latência de processamento e o consumo de VRAM em GPUs de consumo de 8 GB, mantendo níveis adequados de fidelidade visual?}
+\end{quote}
 
 % ---------------------------------------------------------------
-\section{Objetivo}
-\label{sec:objetivo}
+\section{Objetivos e hipótese}
+\label{sec:objetivos}
 
 Esta seção delimita o escopo técnico da pesquisa, focando na avaliação de desempenho sob restrições físicas de VRAM em hardware de consumo.
 
-\subsection{Objetivo principal}
+\subsection{Objetivo geral}
 
-Avaliar experimentalmente os efeitos da convolução separável no desempenho computacional da inferência do modelo SepConv em GPU, utilizando uma implementação nativa em C++, com ênfase na latência e no consumo de memória VRAM em hardware de consumo.
+Avaliar experimentalmente os efeitos da convolução separável no desempenho computacional da inferência do modelo SepConv em GPU, utilizando uma implementação nativa em C++ e CUDA, com ênfase na latência de execução e na mitigação do pico de consumo de memória VRAM em hardware de consumo.
 
-\subsection{Objetivos secundários}
+\subsection{Objetivos específicos}
 
 \begin{enumerate}
-    \item Desenvolver um fluxo de processamento em C++ e OpenCV para a extração de quadros e transferência eficiente para a memória da placa de vídeo;
-    \item Integrar a biblioteca \textit{ONNX Runtime} em C++ para carregar os pesos pré-treinados do modelo SepConv e inferir os vetores separáveis (1D) correspondentes ao movimento;
-    \item Codificar e otimizar \textit{kernels} customizados em arquitetura CUDA para aplicar a operação de convolução separável diretamente na VRAM;
-    \item Comparar o desempenho da implementação proposta (C++) exclusivamente com a \textit{baseline} da implementação original do SepConv (Python/PyTorch), com ênfase na aferição da redução do pico de consumo de memória VRAM e na latência de execução;
-    \item Mensurar o custo computacional e a viabilidade de execução com baixa latência, analisando o tempo de execução, a taxa de quadros por segundo (FPS) e o pico de uso de memória VRAM em hardware de consumo para diferentes resoluções de vídeo.
+    \item Desenvolver um módulo de Entrada e Saída (I/O) em C++ e OpenCV para extração e linearização de quadros de vídeo na memória principal (Host) e transferência contígua para a memória gráfica (Device);
+    \item Integrar a API C++ do \textit{ONNX Runtime} (operando via \textit{CUDA Execution Provider}) para carregar o modelo SepConv compilado e inferir nativamente na VRAM os vetores unidimensionais de movimento ($1D$);
+    \item Projetar e otimizar \textit{kernels} customizados na arquitetura CUDA para aplicar a operação de convolução separável de ordem linear $O(N)$ mantida inteiramente na VRAM;
+    \item Desenvolver um ambiente de testes comparativo entre a implementação nativa proposta (C++/CUDA) e a \textit{baseline} original do modelo SepConv em Python/PyTorch;
+    \item Quantificar a eficiência computacional por meio do monitoramento da latência por quadro (em milissegundos via \texttt{cudaEventRecord}), da taxa de quadros por segundo (FPS) e do pico de ocupação de VRAM (via biblioteca NVML) para diferentes resoluções de vídeo;
+    \item Avaliar a fidelidade visual e a consistência temporal dos quadros sintetizados por meio das métricas objetivas Peak Signal-to-Noise Ratio (PSNR), Structural Similarity Index (SSIM) e Video Multimethod Assessment Fusion (VMAF) sobre o \textit{dataset} Vimeo-90K.
 \end{enumerate}
+
+\subsection{Hipótese e critérios de validação}
+
+Postula-se como \textbf{hipótese científica} que a separabilidade matemática dos \textit{kernels} de movimento ($O(N)$), quando associada a um \textit{pipeline} de inferência nativo em C++ e CUDA desacoplado do \textit{runtime} do Python, reduz significativamente o consumo de memória VRAM e a latência por quadro em comparação com a implementação de alto nível. O critério de validação do trabalho será atingido se o motor proposto for capaz de processar vídeos em alta definição sob o limite de 8 GB de VRAM, registrando ganho de vazão (FPS) e redução do consumo de memória sem causar degradação estatisticamente relevante nas métricas de fidelidade visual (PSNR, SSIM e VMAF).
+
+% ---------------------------------------------------------------
+\section{Justificativa}
+\label{sec:justificativa}
+
+A escolha pela investigação e implementação de algoritmos de interpolação baseados em Convoluções Adaptativas Separáveis justifica-se, primordialmente, pela necessidade de viabilizar a fluidez temporal em computadores pessoais com recursos de memória gráfica restritos. Enquanto abordagens de convolução espacial bidimensional completa demandam uma complexidade quadrática de $N^2$ operações por pixel para a síntese de quadros, a decomposição em \textit{kernels} unidimensionais reduz esse custo para uma ordem linear de $2N$. Essa otimização matemática reduz o volume de operações e, fundamentalmente, o \textit{footprint} (consumo espacial) de tensores mantidos na memória de vídeo (VRAM), viabilizando que hardwares comerciais processem vídeos em alta definição.
+
+A delimitação experimental em GPUs de consumo dotadas de 8 GB de VRAM fundamenta-se na representatividade desse perfil de hardware entre usuários domésticos. Segundo dados da \textit{Steam Hardware \& Software Survey}, placas gráficas com 8 GB de memória representam aproximadamente 26\% das configurações ativas no mercado consumidor. Embora modelos corporativos e GPUs de alto desempenho (com 16 GB a 80 GB de VRAM) tenham registrado avanço, a faixa de 8 GB constitui o principal gargalo físico para a execução de modelos densos de inteligência artificial fora de data centers.
+
+Sob a perspectiva da Ciência da Computação e da Engenharia de Software, este trabalho justifica-se pela análise do gargalo imposto por \textit{frameworks} de alto nível (como Python e PyTorch). Embora adequadas para fase de treinamento e prototipagem, essas linguagens introduzem \textit{overheads} decorrentes de alocações dinâmicas imprevisíveis de memória, gerenciamento de \textit{garbage collection} e interpretação em tempo de execução. Ao transpor a etapa de inferência do modelo SepConv para um ambiente nativo em C++, integrado à API do ONNX Runtime e a \textit{kernels} customizados em CUDA, é possível exercer um controle determinístico sobre a alocação de ponteiros diretamente na VRAM.
+
+Em suma, a justificativa do estudo reside na demonstração prática de que o gerenciamento granular de hardware, aliado à otimização algorítmica de baixo nível, permite superar limitações físicas de memória. Essa abordagem oferece um ponto de equilíbrio viável entre a qualidade visual da interpolação e a eficiência computacional em sistemas comerciais de consumo.
 
 % ===============================================================
 % CAPÍTULO 2 - REVISÃO BIBLIOGRÁFICA
@@ -412,18 +491,43 @@ O modelo SepConv resolve esse desafio diretamente em sua arquitetura de rede neu
 Ao forçar essa estrutura, o algoritmo garante que o kernel resultante seja sempre separável, eliminando erros de aproximação que ocorreriam em uma decomposição analítica \textit{a posteriori}. Para a implementação em C++, essa característica é fundamental: o sistema recebe da rede neural apenas $2N$ valores por pixel, permitindo que a operação de convolução seja executada em dois passos lineares sequenciais, reduzindo drasticamente o esforço computacional e a ocupação de memória sem perda de precisão matemática em relação ao modelo bidimensional pretendido.
 
 \subsection{Arquitetura de GPU e o Gargalo de Memória (\textit{Memory Wall})}
+\label{sec:memory_wall}
 
-A execução de modelos profundos de visão computacional em hardware de consumo não é apenas um desafio aritmético, mas fundamentalmente um problema de tráfego de dados. Segundo a teoria arquitetural apresentada por \citeonline{Hennessy2022}, os sistemas modernos sofrem com o chamado \textit{Memory Wall} (Muro da Memória), um fenômeno no qual a capacidade de processamento cresce em ritmo significativamente superior ao aumento da largura de banda da memória. Como consequência, em diversas aplicações computacionais, especialmente aquelas intensivas em dados, o tempo gasto movimentando informações entre memória e unidades de processamento frequentemente supera o tempo efetivamente dedicado aos cálculos.
+A execução de modelos profundos de visão computacional em hardware de consumo é limitada fundamentalmente pelo tráfego de dados e pela largura de banda de memória. Segundo a teoria arquitetural de \citeonline{Hennessy2022}, os sistemas computacionais modernos enfrentam o fenômeno denominado \textit{Memory Wall} (Muro da Memória), caracterizado pela disparidade entre o crescimento da capacidade de processamento aritmético e o aumento da largura de banda dos barramentos de memória \cite{Hennessy2022}. Como consequência, em aplicações intensivas em dados, o tempo despendido na movimentação de tensores entre a memória principal e as unidades lógicas frequentemente supera o tempo de execução das operações matemáticas \cite{Hennessy2022}.
 
-No ecossistema de Unidades de Processamento Gráfico (GPUs), essa dinâmica é regida pelo modelo de execução \textit{Single Instruction, Multiple Threads} (SIMT). Conforme descrito por \citeonline{Kirk2023}, a eficiência máxima de uma GPU é alcançada quando os acessos à memória ocorrem de forma coalescida e contígua, permitindo que múltiplas threads compartilhem operações de leitura e escrita de maneira eficiente. Transferências excessivas pelo barramento PCI Express (PCIe), bem como realocações frequentes de grandes tensores na memória global da GPU, podem introduzir gargalos significativos e reduzir a taxa efetiva de processamento \cite{NvidiaCUDA2025}.
+Em Unidades de Processamento Gráfico (GPUs), essa restrição exige estratégias rigorosas de alocação e acesso. Conforme aponta \citeonline{Kirk2023}, a vazão máxima de processamento de uma GPU depende de acessos à memória global efetuados de forma contígua e coalescida. Transferências frequentes pelo barramento PCI Express (PCIe) ou realocações dinâmicas de estruturas intermediárias na memória de vídeo (VRAM) introduzem contenção de barramento e paralisam os núcleos de processamento. Esse cenário torna-se crítico em GPUs comerciais limitadas a 8 GB de VRAM, que representam a configuração mais difundida entre usuários de computadores pessoais \cite{SteamSurvey2026}. Nesses ambientes, a redução do \textit{footprint} espacial da inferência --- obtida ao substituir convoluções bidimensionais $O(N^2)$ por filtros separáveis $O(N)$ --- constitui um requisito de engenharia essencial para mitigar o \textit{Memory Wall} e evitar o esgotamento do limite físico de memória.
 
-Dessa forma, a escolha metodológica de transpor kernels tradicionais para convoluções separáveis --- reduzindo o armazenamento temporal de $O(N^2)$ para $O(N)$ --- transcende a mera economia de operações matemáticas de ponto flutuante. A separabilidade matemática reduz o \textit{footprint} (pegada) espacial da inferência diretamente na memória global da GPU, diminuindo a quantidade de dados movimentados e reduzindo a pressão sobre os subsistemas de memória. Essa característica é particularmente relevante considerando que, essa característica é particularmente relevante considerando que, segundo a Steam Hardware Survey, placas de vídeo com 8 GB de VRAM representam atualmente a configuração individual mais comum entre os usuários da plataforma \cite{SteamSurvey2026}. Dessa forma, a redução do consumo de memória torna-se um requisito prático para ampliar a acessibilidade de técnicas avançadas de interpolação de quadros em ambientes domésticos e em hardware de consumo.
+\subsection{Modelo de Execução Paralela SIMT}
+\label{sec:modelo_simt}
 
-Consequentemente, a redução do consumo de memória proporcionada pelas convoluções separáveis não apenas melhora a eficiência computacional, mas também contribui para evitar limitações impostas pela capacidade física da VRAM, fundamentando teoricamente a hipótese de redução de latência e viabilização da inferência em GPUs comerciais de capacidade moderada.
+Para mitigar os tempos de espera da VRAM e gerenciar milhares de rotinas simultâneas, as arquiteturas de GPU empregam o modelo de execução \textit{Single Instruction, Multiple Threads} (SIMT) \cite{Kirk2023}. Diferente do paradigma das CPUs, voltado à redução da latência de instruções sequenciais via memórias \textit{cache} complexas, o modelo SIMT prioriza a vazão total de dados (\textit{throughput}) por meio do paralelismo massivo em nível de dados \cite{Kirk2023, Hennessy2022}.
+
+Sob esse modelo, o hardware organiza as \textit{threads} de execução em grupos lógicos e síncronos denominados \textit{warps} (compostos tipicamente por 32 \textit{threads}) \cite{Kirk2023, NvidiaCUDA2025}. O controlador da GPU emite uma única instrução que é executada simultaneamente por todas as \textit{threads} do \textit{warp}, operando sobre diferentes posições de memória ou pixels da imagem \cite{Kirk2023}. No contexto do processamento de vídeo e das convoluções adaptativas, esse modelo oferece três vantagens estruturais \cite{Gonzalez2009, Kirk2023}:
+
+\begin{enumerate}
+    \item \textbf{Mapeamento 1:1 de Dados e \textit{Threads}:} A matriz da imagem é particionada diretamente na grade de execução, atribuindo pixels ou vetores unidimensionais de filtros a \textit{threads} específicas, eliminando o \textit{overhead} de laços (\textit{loops}) sequenciais de varredura;
+    \item \textbf{Ocultação de Latência (\textit{Latency Hiding}):} Quando um \textit{warp} é paralisado aguardando uma transação na VRAM, o escalonador do multiprocessador comuta instantaneamente o contexto de execução para outro \textit{warp} cujos dados já estão disponíveis nos registradores, mantendo os núcleos aritméticos continuamente ocupados \cite{Kirk2023};
+    \item \textbf{Coalescência de Memória:} A linearização unidimensional de matrizes de imagem ($index = y \cdot W + x$) permite que \textit{threads} adjacentes de um mesmo \textit{warp} acessem endereços contíguos de VRAM, consolidando múltiplas requisições em uma única transação de barramento \cite{Kirk2023, NvidiaCUDA2025}.
+\end{enumerate}
+
+\subsection{Processamento de Baixo Nível e a Plataforma CUDA}
+\label{sec:plataforma_cuda}
+
+A exploração eficiente do modelo SIMT requer interfaces de programação que permitam o controle direto sobre os Multiprocessadores Fluxáveis (\textit{Streaming Multiprocessors} -- SMs) da GPU. A plataforma de computação paralela CUDA (\textit{Compute Unified Device Architecture}) fornece extensões à linguagem C++ para a construção de \textit{kernels} --- funções executadas paralelamente no dispositivo através de uma hierarquia bidimensional de blocos e \textit{grids} de \textit{threads} \cite{NvidiaCUDA2025}.
+
+Desenvolver um motor de inferência nativo em C++ e CUDA traz vantagens determinísticas frente a \textit{frameworks} de alto nível (como PyTorch), que introduzem camadas de abstração e alocações dinâmicas imprevisíveis na memória gráfica:
+
+\begin{itemize}
+    \item \textbf{Gerenciamento Determinístico de VRAM:} Permite o controle explícito da alocação de memória e transferência de dados entre o Host (CPU) e o Device (GPU), eliminando reorientações desnecessárias de ponteiros \cite{NvidiaCUDA2025};
+    \item \textbf{Exploração da Memória Compartilhada (\textit{Shared Memory}):} Permite que \textit{threads} de um mesmo bloco armazenem temporariamente os coeficientes dos filtros $1D$ em uma memória \textit{on-chip} de baixíssima latência, reduzindo drasticamente o tráfego na VRAM global \cite{Kirk2023};
+    \item \textbf{Aferição Precisa de Desempenho:} Permite isolar o tempo computacional estrito da GPU por meio de eventos da API (\texttt{cudaEventRecord}), eliminando o \textit{overhead} do ambiente de execução do Python e a latência de chamadas do sistema operacional \cite{NvidiaCUDA2025}.
+\end{itemize}
+
+A integração entre o controle de baixo nível em C++, a complexidade linear $O(N)$ da separabilidade matemática e a execução paralela em CUDA estabelece a infraestrutura necessária para validar experimentalmente os ganhos de latência e a redução do consumo de VRAM em GPUs de consumo.
 
 \subsection{Métricas de Avaliação Objetiva de Qualidade}
 
-A validação de algoritmos de Interpolação de Quadros de Vídeo (VFI) exige a comparação entre o quadro sintetizado ($I_{sint}$) e o quadro real de referência ($I_{real}$), também denominado \textit{ground truth}. Para quantificar objetivamente a fidelidade visual das imagens geradas, este trabalho utilizará duas métricas amplamente adotadas na literatura de processamento de imagens e visão computacional: Peak Signal-to-Noise Ratio (PSNR) e Structural Similarity Index (SSIM).
+A validação de algoritmos de Interpolação de Quadros de Vídeo (VFI) exige a comparação entre o quadro sintetizado ($I_{sint}$) e o quadro real de referência ($I_{real}$), também denominado \textit{ground truth}. Para quantificar objetivamente a fidelidade visual das imagens geradas, este trabalho utilizará métricas amplamente adotadas na literatura de processamento de imagens e visão computacional: Peak Signal-to-Noise Ratio (PSNR), Structural Similarity Index (SSIM) e Video Multimethod Assessment Fusion (VMAF).
 
 \textbf{1. Peak Signal-to-Noise Ratio (PSNR):}
 
@@ -460,8 +564,25 @@ O resultado é um valor normalmente compreendido no intervalo $[0,1]$, onde valo
 
 Em aplicações de interpolação de quadros, o SSIM é particularmente relevante por ser capaz de identificar degradações visuais frequentemente observadas em quadros sintetizados, como borramento de bordas, perda de detalhes finos e artefatos decorrentes de erros de estimativa de movimento. Por esse motivo, a métrica é amplamente utilizada na literatura contemporânea de VFI como complemento ao PSNR \cite{Niklaus2017,Niklaus2021}.
 
-A utilização conjunta de PSNR e SSIM permite avaliar tanto a precisão numérica quanto a qualidade perceptual das imagens geradas. Dessa forma, torna-se possível analisar os impactos das otimizações propostas neste trabalho não apenas sobre a latência e o consumo de memória, mas também sobre a fidelidade visual dos quadros sintetizados.
+\vspace{0.3cm}
 
+\textbf{3. Video Multimethod Assessment Fusion (VMAF):}
+
+Desenvolvido pela Netflix, o \textit{Video Multimethod Assessment Fusion} (VMAF) é uma métrica de qualidade perceptual de vídeo baseada em aprendizado de máquina que combina diferentes algoritmos de avaliação em uma única pontuação \cite{Li2016VMAF}. Ao contrário de métricas puramente matemáticas como PSNR e SSIM, o VMAF foi projetado especificamente para refletir a percepção humana da qualidade de vídeo em fluxos contínuos.
+
+O modelo funde três indicadores primários de qualidade perceptual:
+
+\begin{itemize}
+    \item \textbf{VIF (\textit{Visual Information Fidelity}):} mede a perda de informação de fidelidade visual em múltiplas escalas espaciais;
+    \item \textbf{DLM (\textit{Detail Loss Metric}):} mede a perda de detalhes e a presença de artefatos que distraem a atenção do espectador;
+    \item \textbf{Motion:} mede o grau de movimento entre quadros consecutivos para ponderar o impacto do borrão temporal.
+\end{itemize}
+
+A saída do VMAF é mapeada em uma escala de 0 a 100, onde valores próximos a 100 indicam qualidade perceptual idêntica à do vídeo de referência. Em algoritmos de VFI, a inclusão do VMAF justifica-se por sua capacidade de avaliar a consistência temporal da sequência de quadros sintetizada, identificando artefatos dinâmicos (como trepidações e descontinuidades) que métricas quadro a quadro nem sempre capturam com precisão.
+
+\vspace{0.3cm}
+
+A utilização conjunta de PSNR, SSIM e VMAF permite avaliar a precisão numérica, a qualidade estrutural e a fidelidade perceptual da sequência gerada. Dessa forma, torna-se possível analisar os impactos das otimizações propostas neste trabalho não apenas sobre a latência e o consumo de memória, mas também sobre a fidelidade visual e a fluidez temporal dos quadros sintetizados.
 
 \subsection{Mensuração de Desempenho Computacional}
 
@@ -503,22 +624,22 @@ Entretanto, a arquitetura proposta prioriza a qualidade visual e a robustez da r
     \centering
     \caption{Comparação entre trabalhos relacionados e a abordagem proposta}
     \label{tab:trabalhos_relacionados}
-    \begin{tabularx}{\textwidth}{l|X|X|X}
+    \begin{tabularx}{\textwidth}{X|X|X|X}
         \toprule
-        \textbf{Trabalho} & \textbf{Estratégia VFI} & \textbf{Tecnologia} & \textbf{Foco / Diferencial} \\
+        \textbf{Autor} & \textbf{Artigo} & \textbf{Estratégia} & \textbf{Limitação / Diferencial} \\
         \midrule
-        Niklaus (2021) & Convolução Adaptativa Refinada & Redes Neurais (PyTorch) & Qualidade visual elevada com arquitetura baseada em kernels adaptativos separáveis. \\
+        Teed e Deng (2020) & RAFT: Recurrent All-Pairs Field Transforms for Optical Flow & Fluxo óptico recorrente com atualização iterativa & Elevado custo computacional e alto consumo de VRAM. \\
         \midrule
-        Han et al. (2024) & Modelagem de Movimento Multi-Escala & Pirâmide Hierárquica e Fluxo Intermediário & Melhor representação de movimentos complexos e redução de artefatos temporais. \\
+        Niklaus et al. (2021) & Softmax Splatting for Video Frame Interpolation & Warping baseado em fluxo óptico e softmax splatting & Dependência de operações complexas de reamostragem e fluxo óptico preciso. \\
         \midrule
-        RAFT (2020) & Fluxo Óptico Recorrente & Volumes de Correlação & Alta precisão na estimativa de movimento com elevado custo computacional. \\
+        Han et al. (2024) & Motion-Aware Video Frame Interpolation & Modelagem de movimento multi-escala com pirâmide hierárquica e fluxo intermediário & Maior complexidade arquitetural devido ao processamento multiescala. \\
         \midrule
-        \textbf{Este trabalho} & \textbf{Inferência SepConv em Baixo Nível} & \textbf{C++ / CUDA / ONNX Runtime} & \textbf{Redução de latência e consumo de VRAM em GPUs de consumo mantendo qualidade visual adequada.} \\
+        \rowcolor{senacblue!15}
+        \textbf{Este Trabalho} & \textbf{Implementação RAFT em C++/CUDA} & \textbf{Inferência nativa com otimizações de memória} & \textbf{Redução de latência e uso de VRAM.} \\
         \bottomrule
     \end{tabularx}
     \legend{Fonte: Elaborado pelo autor (2026)}
 \end{table}
-
 
 % ===============================================================
 % CAPÍTULO 3 - DESENVOLVIMENTO
@@ -526,44 +647,106 @@ Entretanto, a arquitetura proposta prioriza a qualidade visual e a robustez da r
 \chapter{Desenvolvimento}
 \label{cap:desenvolvimento}
 
-Neste capítulo, apresenta-se a solução proposta para o problema identificado, bem como o cronograma de trabalho previsto para o desenvolvimento completo do projeto no TCC2.
+Neste capítulo, apresenta-se a solução proposta para o problema identificado, detalhando a arquitetura do motor de inferência, o processo de exportação e desacoplamento do modelo via ONNX Runtime, o ambiente de validação experimental com análise de quadros e o cronograma de trabalho do projeto.
 
 % ---------------------------------------------------------------
-\section{Solução proposta}
+\section{Solução Proposta e Arquitetura}
 \label{sec:solucao}
 
-A solução proposta para investigar a viabilidade técnica e a eficiência das convoluções adaptativas separáveis consiste no desenvolvimento de um motor de inferência customizado para Interpolação de Quadros de Vídeo (VFI). O foco é transpor a etapa de inferência do modelo SepConv para um ambiente otimizado em GPU. A descrição detalhada do projeto segue abaixo:
+A solução proposta para investigar a viabilidade técnica e a eficiência das convoluções adaptativas separáveis consiste no desenvolvimento de um motor de inferência customizado para Interpolação de Quadros de Vídeo (VFI). O foco é transpor a etapa de inferência do modelo SepConv para um ambiente altamente otimizado em GPU.
 
-\begin{itemize}
-    \item \textbf{Visão geral da solução}: Será desenvolvida uma ferramenta de software de linha de comando (CLI) focada puramente na inferência do modelo SepConv. O sistema processará pares de quadros de um vídeo de entrada, utilizará pesos pré-treinados para gerar os \textit{kernels} de movimento, sintetizará o quadro intermediário e compilará um novo vídeo de saída, registrando os picos de uso de VRAM integrando a API da \textit{NVIDIA Management Library} (NVML) e a latência da execução via eventos CUDA.
+O sistema opera em um fluxo de dados (\textit{pipeline}) composto por cinco estágios sequenciais:
 
-    \item \textbf{Arquitetura}: O sistema opera em um fluxo de dados (\textit{pipeline}) de cinco estágios:
-    \begin{enumerate}
-        \item \textbf{I/O (Host):} Leitura e decodificação dos quadros na RAM do sistema via OpenCV;
-        \item \textbf{Transferência (Host-to-Device):} Envio dos dados linearizados da RAM para a VRAM da GPU;
-        \item \textbf{Inferência (ONNX Runtime):} Processamento do modelo pré-treinado SepConv para gerar os vetores separados 1D para cada pixel, mantendo-os alocados nativamente na GPU;
-        \item \textbf{Convolução (CUDA):} Aplicação paralela da convolução separável $O(N)$ utilizando blocos e \textit{threads} CUDA nativamente na VRAM para compor o quadro final;
-        \item \textbf{Retorno e Escrita:} Transferência apenas do quadro gerado final de volta para o Host e codificação do vídeo.
-    \end{enumerate}
-
-    \item \textbf{Tecnologias e ferramentas}: O controle do fluxo será desenvolvido em \textbf{C++17}. Para a leitura e decodificação do vídeo, optou-se pela biblioteca \textbf{OpenCV (C++ API)}. O motor de inferência dos filtros será a biblioteca \textbf{ONNX Runtime} (operando via provedor CUDA), enquanto a aplicação matemática intensiva e paralela sobre a imagem fará uso das APIs nativas \textbf{NVIDIA CUDA C++}.
-
-    \item \textbf{Funcionalidades principais}: A ferramenta carregará o modelo `.onnx`, executará a predição quadro a quadro, aferirá os tempos de latência em milissegundos utilizando as medições do ecossistema NVIDIA e exportará um consolidado do pico de memória VRAM registrado.
-
-    \item \textbf{Metodologia de desenvolvimento}: Será adotada uma abordagem de ciclos iterativos de otimização (\textit{Profiling-Driven Development}). O protótipo validará as transferências básicas de memória e, progressivamente, focará em medir o comportamento da placa de vídeo e o esgotamento dos seus 8 GB ao aplicar o kernel de forma escalonada.
-
-    \item \textbf{Critérios de validação e Mensuração de Hardware}: O sucesso da eficiência será avaliado contrastando os resultados da arquitetura proposta com a \textit{baseline} padrão em Python/PyTorch do mesmo modelo. A coleta de dados do consumo de VRAM será efetuada através da \textit{NVIDIA Management Library} (NVML) e utilitários como o \textit{Nsight Systems}, garantindo a precisão ao isolar o processamento principal. A latência será aferida no código C++ através de eventos da API (\texttt{cudaEventRecord}), isolando o tempo real de processamento matemático paralelo na GPU.
-    
-    \item \textbf{Seleção de Dataset}: A avaliação experimental de qualidade visual e consumo associado será conduzida usando fragmentos do \textit{dataset} \textbf{Vimeo-90K}, escalonados e ajustados para a resolução de testes.
-\end{itemize}
+\begin{enumerate}
+    \item \textbf{I/O (Host):} Leitura e decodificação dos quadros na RAM do sistema via OpenCV (API C++);
+    \item \textbf{Transferência (Host-to-Device):} Envio dos dados linearizados da RAM para a VRAM da GPU via barramento PCIe;
+    \item \textbf{Inferência (ONNX Runtime):} Processamento do modelo pré-treinado SepConv para gerar os vetores separados 1D para cada pixel, mantendo-os alocados nativamente na GPU;
+    \item \textbf{Convolução (CUDA):} Aplicação paralela da convolução separável $O(N)$ utilizando blocos e \textit{threads} CUDA nativamente na VRAM para compor o quadro final;
+    \item \textbf{Retorno e Escrita (Device-to-Host):} Transferência apenas do quadro gerado final de volta para o Host e codificação do vídeo.
+\end{enumerate}
 
 % ---------------------------------------------------------------
+\section{Exportação do Modelo e Grafo ONNX}
+\label{sec:exportacao_onnx}
+
+Para desacoplar a inferência do ambiente de treinamento em Python/PyTorch, a arquitetura foi exportada para a plataforma \textit{Open Neural Network Exchange} (ONNX). O modelo em formato \texttt{.onnx} recebe dois quadros de entrada e gera como saída os quatro tensores dos filtros unidimensionais ($v_1, h_1, v_2, h_2$).
+
+A estrutura do grafo exportado pode ser observada nas Figuras~\ref{fig:onnx_top} e~\ref{fig:onnx_bottom}, geradas a partir da inspeção do arquivo executável.
+
+\begin{figure}[H]
+    \centering
+    \caption{Visualização da camada de entrada do grafo computacional SepConv exportado para ONNX.}
+    \label{fig:onnx_top}
+    \includegraphics[width=0.85\textwidth]{imagens/onnx_top.png}
+    \legend{Fonte: Elaborado pelo autor (2026)}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \caption{Bifurcação das camadas de saída no ONNX emitindo os quatro vetores de filtragem $1D$.}
+    \label{fig:onnx_bottom}
+    \includegraphics[width=0.85\textwidth]{imagens/onnx_bottom.png}
+    \legend{Fonte: Elaborado pelo autor (2026)}
+\end{figure}
+
+% ---------------------------------------------------------------
+\section{Validação Experimental e Inspeção de Quadros}
+\label{sec:validacao_experimental}
+
+Para validar a integridade da síntese temporal e comparar os resultados gerados pelo modelo frente às sequências originais, estruturou-se um ambiente de testes dinâmico baseado em scripts de processamento de imagem.
+
+\subsection{Sequenciamento de Quadros Interpolados}
+
+A validação da interpolação na proporção de $4\times$ (transição de 30 FPS para 120 FPS) é apresentada na Figura~\ref{fig:sequencia_frames}. Os quadros (a) e (e) correspondem às amostras originais do vídeo ($30\text{ FPS}$), enquanto os quadros (b), (c) e (d) representam as imagens intermediárias sintetizadas pelo motor SepConv.
+
+\begin{figure}[H]
+    \centering
+    \caption{Sequência temporal de interpolação $4\times$: (a) Quadro 840 ($t$); (b) Quadro 841 ($t+0.25$); (c) Quadro 842 ($t+0.50$); (d) Quadro 843 ($t+0.75$); (e) Quadro 844 ($t+1$).}
+    \label{fig:sequencia_frames}
+    
+    \includegraphics[width=0.85\textwidth]{imagens/frame_000840.png} \\
+    {\small (a) Quadro original 840 ($t$)} \\[0.2cm]
+    
+    \includegraphics[width=0.85\textwidth]{imagens/frame_000841.png} \\
+    {\small (b) Interpolação 841 ($t+0.25$)} \\[0.2cm]
+    
+    \includegraphics[width=0.85\textwidth]{imagens/frame_000842.png} \\
+    {\small (c) Interpolação 842 ($t+0.50$)} \\[0.2cm]
+    
+    \includegraphics[width=0.85\textwidth]{imagens/frame_000843.png} \\
+    {\small (d) Interpolação 843 ($t+0.75$)} \\[0.2cm]
+    
+    \includegraphics[width=0.85\textwidth]{imagens/frame_000844.png} \\
+    {\small (e) Quadro original 844 ($t+1$)}
+    
+    \legend{Fonte: Elaborado pelo autor (2026)}
+\end{figure}
+
+\subsection{Inspeção de Pixels e Limites de Filtragem}
+
+A avaliação de qualidade visual envolveu também a inspeção de regiões críticas de movimento acelerado. A Figura~\ref{fig:artefatos_zoom} exibe a comparação detalhada entre a região original e o quadro sintetizado, permitindo identificar o nível de fidelidade estrutural e pequenas atenuações de nitidez inerentes às regiões de oclusão.
+
+\begin{figure}[H]
+    \centering
+    \caption{Análise comparativa de detalhe: (a) Recorte da região no quadro original 840; (b) Recorte correspondente no quadro interpolado 842.}
+    \label{fig:artefatos_zoom}
+    \begin{tabular}{cc}
+        \includegraphics[width=0.45\textwidth]{imagens/zoom_original_840.png} &
+        \includegraphics[width=0.45\textwidth]{imagens/zoom_interpolado_842.png} \\
+        (a) Original ($t$) & (b) Interpolado ($t+0.5$)
+    \end{tabular}
+    \legend{Fonte: Elaborado pelo autor (2026)}
+\end{figure}
+
+% ---------------------------------------------------------------
+\clearpage
+
 \section{Cronograma de trabalho}
 \label{sec:cronograma}
 
 O cronograma a seguir apresenta, no formato de diagrama de Gantt, as atividades previstas para o desenvolvimento do TCC2, distribuídas ao longo das semanas do semestre.
 
-\begin{figure}[htb]
+\begin{figure}[H]
     \centering
     \caption{Cronograma de atividades -- Diagrama de Gantt}
     \label{fig:gantt}
