@@ -709,7 +709,7 @@ seta/.style={thick, -{Latex[length=3mm]}}
 
 Todos os experimentos foram executados em um computador pessoal com configuração representativa do perfil de hardware de consumo discutido na Seção~\ref{sec:justificativa}. A Tabela~\ref{tab:ambiente} descreve o hardware e as versões de software utilizadas, informação necessária para a reprodutibilidade dos resultados.
 
-\begin{table}[htb]
+\begin{table}[H]
 \centering
 \caption{Hardware e software do ambiente experimental}
 \label{tab:ambiente}
@@ -763,7 +763,7 @@ A investigação mostrou que o decodificador original recorta a saída de cada e
 
 Para verificar a equivalência, as saídas do modelo ONNX (executado pelo ONNX Runtime) foram comparadas às da rede original em PyTorch, com entradas idênticas e o modo TF32 desabilitado nas duas implementações. A Tabela~\ref{tab:validacao_onnx} mostra que o erro absoluto máximo permaneceu na ordem de $10^{-6}$ em termos relativos, compatível com a precisão numérica da aritmética de ponto flutuante de 32 bits.
 
-\begin{table}[htb]
+\begin{table}[H]
 \centering
 \caption{Diferença entre os filtros 1D estimados pelo modelo ONNX e pela rede original}
 \label{tab:validacao_onnx}
@@ -895,7 +895,7 @@ As duas implementações leem e gravam os vídeos com a mesma biblioteca (OpenCV
 
 Esta seção apresenta os resultados da primeira versão do motor C++/CUDA, que reproduz fielmente a estratégia de memória da implementação original: todos os tensores do quadro inteiro são processados de uma só vez. A Tabela~\ref{tab:resultados_gta} consolida as medições, detalhadas nas subseções seguintes.
 
-\begin{table}[htb]
+\begin{table}[H]
 \centering
 \caption{Desempenho e fidelidade visual por resolução (interpolação 2$\times$)}
 \label{tab:resultados_gta}
@@ -974,8 +974,8 @@ A Figura~\ref{fig:comparacao_quadro} apresenta um exemplo qualitativo em 1080p. 
     \centering
     \caption{Exemplo de quadro sintetizado em 1080p (quadro de PSNR mediano): (a) quadro real; (b) quadro sintetizado pelo motor C++; (c) mapa do erro absoluto.}
     \label{fig:comparacao_quadro}
-    \includegraphics[width=0.8\textwidth]{imagens/comparacao_quadro_1080p.pdf}
-    \legend{Fonte: Elaborado pelo autor (2026)}
+    \includegraphics[width=\textwidth]{imagens/comparacao_quadro_1080p.pdf}
+    \legend{Fonte: Elaborado pelo autor (2026). Exibida apenas a área avaliada, sem as tarjas pretas do vídeo original.}
 \end{figure}
 
 A Figura~\ref{fig:psnr_quadros} detalha o PSNR de cada quadro sintetizado. As curvas das três resoluções têm o mesmo formato, o que indica que a dificuldade da interpolação é determinada principalmente pelo conteúdo de cada instante (intensidade do movimento), e não pela resolução.
