@@ -124,7 +124,7 @@
 % RESUMO
 % ---------------------------------------------------------------
 \begin{resumo}
-A disseminação de monitores com taxas de atualização de 60 Hz a 144 Hz evidenciou a limitação temporal de conteúdos audiovisuais capturados a 24 FPS ou 30 FPS. A Interpolação de Quadros de Vídeo (VFI -- \textit{Video Frame Interpolation}) sintetiza quadros intermediários para aumentar a fluidez, mas modelos de aprendizado profundo executados em \textit{frameworks} de alto nível, como o PyTorch, demandam grande quantidade de memória de vídeo (VRAM). As Convoluções Adaptativas Separáveis (SepConv) estimam, para cada pixel, um par de filtros unidimensionais de $N$ coeficientes em vez de um filtro bidimensional de $N^2$ coeficientes, o que reduz a memória ocupada pelos filtros (cerca de 1,6 GB contra 40 GB em 1080p, com $N = 51$), embora a síntese continue realizando $N^2$ multiplicações por pixel. Este trabalho avaliou experimentalmente se um motor de inferência nativo em C++ e CUDA para o modelo SepConv++ reduz a latência e o pico de VRAM em uma GPU de consumo de 8 GB, em comparação com a implementação original em Python/PyTorch. O motor integra a biblioteca OpenCV para entrada e saída, a API C++ do ONNX Runtime com \textit{I/O binding} para a inferência da rede e um \textit{kernel} CUDA próprio para a convolução separável. As duas implementações interpolaram com fator $2\times$ um trecho de 61 quadros de vídeo em 720p, 1080p, 1440p e 2160p, com medição da latência por quadro, do pico de VRAM via NVML e da fidelidade visual por PSNR, SSIM e VMAF. Em 720p e 1080p, o motor C++ reduziu a latência em cerca de 24\% (305,5 ms contra 404,9 ms por quadro em 1080p) e produziu quadros com a mesma fidelidade da implementação original (34,10 dB de PSNR em 1080p nas duas), mas consumiu cerca de 45\% mais VRAM (6.648 MiB contra 4.585 MiB). A partir de 1440p, a VRAM se esgotou: o motor ficou 5,8 vezes mais lento que a implementação original e falhou em 2160p. Conclui-se que a transposição da inferência para C++ reduz a latência sem perda de qualidade, mas que a redução de VRAM não decorre da troca de linguagem ou de \textit{framework}, e depende de um controle explícito da memória, como o processamento em blocos.
+A disseminação de monitores com taxas de atualização de 60 Hz a 144 Hz evidenciou a limitação temporal de conteúdos audiovisuais capturados a 24 FPS ou 30 FPS. A Interpolação de Quadros de Vídeo (VFI -- \textit{Video Frame Interpolation}) sintetiza quadros intermediários para aumentar a fluidez, mas modelos de aprendizado profundo executados em \textit{frameworks} de alto nível, como o PyTorch, demandam grande quantidade de memória de vídeo (VRAM). As Convoluções Adaptativas Separáveis (SepConv) estimam, para cada pixel, um par de filtros unidimensionais de $N$ coeficientes em vez de um filtro bidimensional de $N^2$ coeficientes, o que reduz a memória ocupada pelos filtros (cerca de 1,6 GB contra 40 GB em 1080p, com $N = 51$), embora a síntese continue realizando $N^2$ multiplicações por pixel. Este trabalho avaliou experimentalmente se um motor de inferência nativo em C++ e CUDA para o modelo SepConv++ reduz a latência e o pico de VRAM em uma GPU de consumo de 8 GB, em comparação com a implementação original em Python/PyTorch. O motor integra a biblioteca OpenCV para entrada e saída, a API C++ do ONNX Runtime com \textit{I/O binding} para a inferência da rede e um \textit{kernel} CUDA próprio para a convolução separável. As duas implementações interpolaram com fator $2\times$ um trecho de 61 quadros de vídeo em 720p, 1080p, 1440p e 2160p, com medição da latência por quadro, do pico de VRAM via NVML e da fidelidade visual por PSNR, SSIM e VMAF. Em 720p e 1080p, o motor C++ reduziu a latência em cerca de 24\% (305,5 ms contra 404,9 ms por quadro em 1080p) e produziu quadros com a mesma fidelidade da implementação original (34,10 dB de PSNR em 1080p nas duas), mas consumiu cerca de 45\% mais VRAM (6.648 MiB contra 4.585 MiB). A partir de 1440p, a VRAM se esgotou: o motor ficou 5,8 vezes mais lento que a implementação original e falhou em 2160p. Uma segunda versão do motor, com processamento em blocos e normalização global, manteve a mesma fidelidade e fez o pico de VRAM depender do tamanho do bloco, e não da resolução: com blocos de 512 pixels, ele não passou de 2.407 MiB, mesmo em 2160p. Em 1440p e 2160p, essa versão evitou a saturação e foi mais rápida que a implementação original (947,4 ms e 2,3 s por quadro, contra 1,35 s e 67,0 s); em 720p e 1080p, porém, os blocos aumentaram a latência, e nenhuma configuração reduziu latência e VRAM ao mesmo tempo. Conclui-se que a transposição da inferência para C++ reduz a latência sem perda de qualidade, mas que a redução de VRAM não decorre da troca de linguagem ou de \textit{framework}: ela depende de um controle explícito da memória, que impõe um compromisso entre memória e latência.
 
 \vspace{\onelineskip}
 
@@ -134,7 +134,7 @@ A disseminação de monitores com taxas de atualização de 60 Hz a 144 Hz evide
 
 \begin{resumo}[Abstract]
  \begin{otherlanguage*}{english}
-The spread of displays with refresh rates from 60 Hz to 144 Hz has highlighted the temporal limitation of audiovisual content captured at 24 FPS or 30 FPS. Video Frame Interpolation (VFI) synthesizes intermediate frames to increase smoothness, but deep learning models executed on high-level frameworks, such as PyTorch, demand large amounts of video memory (VRAM). Adaptive Separable Convolutions (SepConv) estimate, for each pixel, a pair of one-dimensional filters with $N$ coefficients instead of a two-dimensional filter with $N^2$ coefficients, which reduces the memory occupied by the filters (about 1.6 GB versus 40 GB at 1080p, with $N = 51$), although the synthesis still performs $N^2$ multiplications per pixel. This work experimentally evaluated whether a native C++ and CUDA inference engine for the SepConv++ model reduces latency and peak VRAM usage on an 8 GB consumer GPU, compared with the original Python/PyTorch implementation. The engine integrates the OpenCV library for input and output, the ONNX Runtime C++ API with I/O binding for network inference, and a custom CUDA kernel for the separable convolution. Both implementations interpolated a 61-frame video excerpt with a $2\times$ factor at 720p, 1080p, 1440p and 2160p, measuring per-frame latency, peak VRAM via NVML, and visual fidelity through PSNR, SSIM and VMAF. At 720p and 1080p, the C++ engine reduced latency by about 24\% (305.5 ms versus 404.9 ms per frame at 1080p) and produced frames with the same fidelity as the original implementation (34.10 dB PSNR at 1080p for both), but consumed about 45\% more VRAM (6,648 MiB versus 4,585 MiB). From 1440p onwards, VRAM was exhausted: the engine became 5.8 times slower than the original implementation and failed at 2160p. It is concluded that moving inference to C++ reduces latency without loss of quality, but that VRAM reduction does not follow from the change of language or framework, and depends on explicit memory control, such as tiled processing.
+The spread of displays with refresh rates from 60 Hz to 144 Hz has highlighted the temporal limitation of audiovisual content captured at 24 FPS or 30 FPS. Video Frame Interpolation (VFI) synthesizes intermediate frames to increase smoothness, but deep learning models executed on high-level frameworks, such as PyTorch, demand large amounts of video memory (VRAM). Adaptive Separable Convolutions (SepConv) estimate, for each pixel, a pair of one-dimensional filters with $N$ coefficients instead of a two-dimensional filter with $N^2$ coefficients, which reduces the memory occupied by the filters (about 1.6 GB versus 40 GB at 1080p, with $N = 51$), although the synthesis still performs $N^2$ multiplications per pixel. This work experimentally evaluated whether a native C++ and CUDA inference engine for the SepConv++ model reduces latency and peak VRAM usage on an 8 GB consumer GPU, compared with the original Python/PyTorch implementation. The engine integrates the OpenCV library for input and output, the ONNX Runtime C++ API with I/O binding for network inference, and a custom CUDA kernel for the separable convolution. Both implementations interpolated a 61-frame video excerpt with a $2\times$ factor at 720p, 1080p, 1440p and 2160p, measuring per-frame latency, peak VRAM via NVML, and visual fidelity through PSNR, SSIM and VMAF. At 720p and 1080p, the C++ engine reduced latency by about 24\% (305.5 ms versus 404.9 ms per frame at 1080p) and produced frames with the same fidelity as the original implementation (34.10 dB PSNR at 1080p for both), but consumed about 45\% more VRAM (6,648 MiB versus 4,585 MiB). From 1440p onwards, VRAM was exhausted: the engine became 5.8 times slower than the original implementation and failed at 2160p. A second version of the engine, with tiled processing and global normalization, kept the same fidelity and made peak VRAM depend on the tile size rather than on the resolution: with 512-pixel tiles, it did not exceed 2,407 MiB, even at 2160p. At 1440p and 2160p, this version avoided saturation and was faster than the original implementation (947.4 ms and 2.3 s per frame, versus 1.35 s and 67.0 s); at 720p and 1080p, however, tiling increased latency, and no configuration reduced latency and VRAM at the same time. It is concluded that moving inference to C++ reduces latency without loss of quality, but that VRAM reduction does not follow from the change of language or framework: it depends on explicit memory control, which imposes a trade-off between memory and latency.
 
    \vspace{\onelineskip}
 
@@ -886,7 +886,7 @@ A margem foi definida experimentalmente. Uma reimplementação em PyTorch do pro
 
 Sem margem, os blocos produzem erros de até 98 níveis de intensidade nas suas bordas. A partir de 96 pixels, a maior diferença em relação ao quadro inteiro passa a ser de um único nível, em menos de 0,002\% dos pixels --- a mesma ordem do arredondamento observado entre o motor C++ e a implementação original (Seção~\ref{sec:equivalencia}). Por isso, adotou-se $M = 96$. A tabela também evidencia o compromisso central da estratégia: blocos menores reduzem o pico de memória, mas aumentam o tempo, pois a margem de cada bloco é processada repetidas vezes. Com blocos de 512 pixels e margem de 96, o pico de ativações caiu 52\% e o tempo aumentou 49\% em relação ao quadro inteiro.
 
-No motor C++, a saída em blocos ($T = 512$ e $T = 256$, $M = 96$) diferiu da saída do quadro inteiro em no máximo um nível de intensidade, em 0,02\% dos pixels. A avaliação de desempenho desta segunda versão segue o mesmo protocolo da primeira (Capítulo~\ref{cap:metodologia}) e será incorporada ao Capítulo~\ref{cap:resultados}.
+No motor C++, a saída em blocos ($T = 512$ e $T = 256$, $M = 96$) diferiu da saída do quadro inteiro em no máximo um nível de intensidade, em 0,02\% dos pixels. A avaliação de desempenho desta segunda versão segue o mesmo protocolo da primeira (Capítulo~\ref{cap:metodologia}) e é apresentada na Seção~\ref{sec:res_blocos}.
 
 % ===============================================================
 % CAPÍTULO 4 - METODOLOGIA
@@ -906,7 +906,7 @@ Trata-se de um estudo experimental comparativo. As variáveis independentes são
     \item \textbf{\textit{Baseline} Python/PyTorch}: o código original de \citeonline{Niklaus2021} (Seção~\ref{sec:modelo_utilizado}), em que a rede é executada pelo PyTorch e a síntese por um \textit{kernel} CUDA compilado em tempo de execução. Um \textit{script} de medição invoca o código original sem alterar o seu comportamento e registra o tempo por quadro e a VRAM com os mesmos critérios do motor C++;
     \item \textbf{Motor C++/CUDA}: o motor descrito na Seção~\ref{sec:implementacao_motor}, com a rede executada pelo ONNX Runtime e a síntese pelo \textit{kernel} próprio;
     \item \textbf{Controle ONNX Runtime}: a rede executada pelo ONNX Runtime, mas sem o \textit{kernel} próprio de síntese, para separar o efeito da troca do mecanismo de inferência do efeito do \textit{kernel} de convolução. Esta condição foi definida no protocolo, mas os seus resultados não estão incluídos nesta versão do texto (Seção~\ref{sec:riscos});
-    \item \textbf{Motor C++/CUDA em blocos}: a segunda versão do motor (Seção~\ref{sec:tiling}), com blocos de 256 e 512 pixels e margem de 96 pixels. Os resultados desta condição serão incorporados após a próxima bateria de testes.
+    \item \textbf{Motor C++/CUDA em blocos}: a segunda versão do motor (Seção~\ref{sec:tiling}), com blocos de 256, 512 e 1024 pixels e margem de 96 pixels.
 \end{enumerate}
 
 Como as condições 1 e 2 utilizam o mesmo modelo e os mesmos filtros separáveis, a comparação entre elas isola o efeito da forma de execução (linguagem, mecanismo de inferência e gerenciamento de memória), e não o efeito da separabilidade em si, que está presente nas duas.
@@ -959,7 +959,7 @@ Os conjuntos de referência da literatura, como o Middlebury e o Vimeo-90K \cite
 
 Para cada resolução, gera-se uma versão do trecho contendo apenas os quadros pares (15 FPS). Cada implementação interpola essa versão com fator $2\times$, reconstruindo um vídeo de 30 FPS no qual os quadros de índice ímpar são sintetizados. Esse procedimento permite medir o desempenho e a qualidade em uma única execução: os 30 quadros sintetizados são comparados aos quadros reais correspondentes do trecho original, que funcionam como \textit{ground truth}.
 
-As duas implementações leem e gravam os vídeos com a mesma biblioteca (OpenCV) e o mesmo esquema de interpolação. Cada combinação de implementação e resolução foi executada uma vez, em sequência, por um único \textit{script}. As três primeiras interpolações de cada execução são descartadas como aquecimento --- período em que ocorrem a inicialização do contexto CUDA, a seleção de algoritmos do cuDNN e a reserva inicial de memória ---, e as demais (27 por resolução) compõem a média e o desvio padrão do tempo por quadro. Em 2160p, devido ao tempo de execução, foram processados apenas cinco quadros de entrada, com uma interpolação de aquecimento, resultando em três medições de tempo e quatro quadros sintetizados avaliados.
+As duas implementações leem e gravam os vídeos com a mesma biblioteca (OpenCV) e o mesmo esquema de interpolação. Cada combinação de implementação e resolução foi executada uma vez, em sequência, por um único \textit{script}. A segunda versão do motor foi avaliada em uma segunda bateria, que repetiu também as condições da primeira, para que todas fossem comparadas nas mesmas circunstâncias (Seção~\ref{sec:res_blocos}). As três primeiras interpolações de cada execução são descartadas como aquecimento --- período em que ocorrem a inicialização do contexto CUDA, a seleção de algoritmos do cuDNN e a reserva inicial de memória ---, e as demais (27 por resolução) compõem a média e o desvio padrão do tempo por quadro. Em 2160p, devido ao tempo de execução, foram processados apenas cinco quadros de entrada, com uma interpolação de aquecimento, resultando em três medições de tempo e quatro quadros sintetizados avaliados.
 
 % ---------------------------------------------------------------
 \section{Métricas}
@@ -1001,9 +1001,9 @@ A Tabela~\ref{tab:riscos} resume os riscos identificados para a conclusão do tr
 \toprule
 \textbf{Risco} & \textbf{Mitigação} \\
 \midrule
-A avaliação completa do processamento em blocos (\textit{tiling}), já implementado e validado (Seção~\ref{sec:tiling}), não ficar pronta a tempo & Priorizar a bateria do motor em blocos sobre os demais ajustes; se necessário, relatar apenas as resoluções concluídas e avaliar os ajustes de menor custo --- limite e liberação da \textit{arena} do ONNX Runtime e inferência em FP16 --- como trabalhos futuros \\
+Os ajustes de menor custo --- limite e liberação da \textit{arena} do ONNX Runtime e inferência em FP16 --- não ficarem prontos a tempo & A avaliação do processamento em blocos (\textit{tiling}), priorizada sobre os demais ajustes, foi concluída (Seção~\ref{sec:res_blocos}); os ajustes restantes serão relatados como trabalhos futuros se não forem concluídos \\
 \midrule
-A VRAM se esgotar em 1440p e 2160p e o \textit{driver} passar a usar a memória principal & Execuções sinalizadas como saturadas e analisadas separadamente; a hipótese é avaliada em 720p e 1080p \\
+A VRAM se esgotar em 1440p e 2160p e o \textit{driver} passar a usar a memória principal & Execuções sinalizadas como saturadas e analisadas separadamente; a hipótese é avaliada em 720p e 1080p; o processamento em blocos (Seção~\ref{sec:tiling}) é avaliado como forma de evitar a saturação \\
 \midrule
 Base de avaliação restrita a um único trecho de vídeo & Ampliação com outros trechos sem cortes e com o conjunto Middlebury; delimitação explícita do alcance das conclusões \\
 \midrule
@@ -1098,7 +1098,7 @@ O cronograma a seguir apresenta, no formato de diagrama de Gantt, as atividades 
 \chapter{Resultados e Discussão}
 \label{cap:resultados}
 
-Este capítulo apresenta os resultados da primeira versão do motor C++/CUDA, que reproduz a estratégia de memória da implementação original: todos os tensores do quadro inteiro são processados de uma só vez. A Tabela~\ref{tab:resultados_gta} consolida as medições, detalhadas nas seções seguintes e analisadas frente à hipótese na Seção~\ref{sec:discussao}.
+Este capítulo apresenta os resultados da primeira versão do motor C++/CUDA, que reproduz a estratégia de memória da implementação original: todos os tensores do quadro inteiro são processados de uma só vez. A Tabela~\ref{tab:resultados_gta} consolida as medições, detalhadas nas seções seguintes. Os resultados da segunda versão, com processamento em blocos, são apresentados na Seção~\ref{sec:res_blocos}, e a Seção~\ref{sec:discussao} analisa as duas versões frente à hipótese.
 
 \begin{table}[H]
 \centering
@@ -1201,6 +1201,95 @@ A Figura~\ref{fig:psnr_quadros} detalha o PSNR de cada quadro sintetizado. As cu
 \end{figure}
 
 % ---------------------------------------------------------------
+\section{Segunda versão: processamento em blocos}
+\label{sec:res_blocos}
+
+A segunda versão do motor (Seção~\ref{sec:tiling}) foi avaliada em uma nova bateria, com o mesmo protocolo e o mesmo trecho de vídeo, para blocos de 1024, 512 e 256 pixels e margem de 96 pixels. Para que todas as condições fossem medidas nas mesmas circunstâncias, a bateria repetiu também o motor com o quadro inteiro e a \textit{baseline}. Nas execuções sem saturação da VRAM, as médias repetidas diferiram das da primeira bateria em menos de 0,5\%; nas execuções saturadas, em até 4,3\%. A Tabela~\ref{tab:resultados_blocos} consolida as medições.
+
+\begin{table}[H]
+\centering
+\caption{Desempenho do motor em blocos por resolução (interpolação 2$\times$, margem de 96 pixels)}
+\label{tab:resultados_blocos}
+\footnotesize
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Res.} & \textbf{Implementação} & \textbf{ms/quadro} & \textbf{FPS} & \textbf{VRAM (MiB)} \\
+\midrule
+720p & C++/CUDA, quadro inteiro & 134,1 $\pm$ 0,8 & 7,46 & 3.138 \\
+720p & C++/CUDA, blocos 1024 & 181,6 $\pm$ 8,0 & 5,51 & 2.862 \\
+720p & C++/CUDA, blocos 512 & 362,5 $\pm$ 19,2 & 2,76 & 1.793 \\
+720p & C++/CUDA, blocos 256 & 545,1 $\pm$ 24,4 & 1,83 & 955 \\
+720p & Python/PyTorch & 176,2 $\pm$ 0,9 & 5,68 & 2.155 \\
+\midrule
+1080p & C++/CUDA, quadro inteiro & 305,3 $\pm$ 1,8 & 3,28 & 6.650 \\
+1080p & C++/CUDA, blocos 1024 & 430,5 $\pm$ 5,4 & 2,32 & 4.177 \\
+1080p & C++/CUDA, blocos 512 & 676,0 $\pm$ 11,7 & 1,48 & 2.183 \\
+1080p & C++/CUDA, blocos 256 & 1.190,4 $\pm$ 29,3 & 0,84 & 1.000 \\
+1080p & Python/PyTorch & 404,2 $\pm$ 1,8 & 2,47 & 4.584 \\
+\midrule
+1440p & C++/CUDA, quadro inteiro & 8.074,8 $\pm$ 10,8$^{*}$ & 0,12 & 7.091$^{*}$ \\
+1440p & C++/CUDA, blocos 1024 & 762,7 $\pm$ 16,0 & 1,31 & 5.815 \\
+1440p & C++/CUDA, blocos 512 & 947,4 $\pm$ 10,3 & 1,06 & 2.253 \\
+1440p & C++/CUDA, blocos 256 & 1.673,7 $\pm$ 49,0 & 0,60 & 1.078 \\
+1440p & Python/PyTorch & 1.354,7 $\pm$ 10,9$^{*}$ & 0,74 & 7.073$^{*}$ \\
+\midrule
+2160p & C++/CUDA, quadro inteiro & \multicolumn{3}{c}{falhou por falta de memória} \\
+2160p & C++/CUDA, blocos 1024 & 1.673,2 $\pm$ 5,0$^{*}$ & 0,60 & 7.403$^{*}$ \\
+2160p & C++/CUDA, blocos 512 & 2.296,4 $\pm$ 5,6 & 0,44 & 2.407 \\
+2160p & C++/CUDA, blocos 256 & 3.490,0 $\pm$ 5,6 & 0,29 & 1.189 \\
+2160p & Python/PyTorch & 67.031,9 $\pm$ 2.189,8$^{*}$ & 0,01 & 7.270$^{*}$ \\
+\bottomrule
+\end{tabular}
+\legend{Latência: média $\pm$ desvio padrão (27 medições; três em 2160p). $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
+\end{table}
+
+A fidelidade visual não foi afetada pelos blocos. Em todas as resoluções e tamanhos de bloco, as métricas coincidiram com as da \textit{baseline}: a diferença média quadro a quadro foi inferior a 0,001 dB de PSNR e a $10^{-5}$ de SSIM, e de no máximo 0,007 ponto de VMAF. Por isso, a tabela omite as métricas de qualidade, que são as mesmas da Tabela~\ref{tab:resultados_gta}.
+
+A Figura~\ref{fig:latencia_blocos} mostra que o efeito dos blocos sobre a latência depende da resolução. Em 720p e 1080p, em que o quadro inteiro cabe na VRAM, os blocos apenas acrescentam tempo: com blocos de 1024 pixels, o motor ficou 35\% a 41\% mais lento que com o quadro inteiro e 3\% a 7\% mais lento que a \textit{baseline}; com blocos de 256 pixels, cerca de três vezes mais lento que a \textit{baseline}. A partir de 1440p, a situação se inverte. Nenhuma configuração em blocos saturou a VRAM em 1440p, e o motor passou a ser mais rápido que a \textit{baseline}, que satura: 762,7 ms com blocos de 1024 pixels e 947,4 ms com blocos de 512, contra 1.354,7 ms (reduções de 44\% e 30\%) e contra 8,1 s do motor com o quadro inteiro. Em 2160p, em que o motor com o quadro inteiro falha, os blocos de 512 pixels sintetizaram cada quadro em 2,3 s, contra 67,0 s da \textit{baseline}. Os blocos de 1024 pixels foram ainda mais rápidos em 2160p (1,7 s), mas saturaram a VRAM, de modo que esse tempo pode ter sido afetado pelo uso da memória principal.
+
+\begin{figure}[H]
+    \centering
+    \caption{Tempo médio por quadro interpolado do motor em blocos, comparado ao motor com o quadro inteiro e à \textit{baseline} (escala logarítmica).}
+    \label{fig:latencia_blocos}
+    \includegraphics[width=\textwidth]{imagens/latencia_blocos.pdf}
+    \legend{Fonte: Elaborado pelo autor (2026). Marcadores vazados indicam VRAM saturada.}
+\end{figure}
+
+Quanto à memória (Figura~\ref{fig:vram_blocos}), o pico passa a depender principalmente do tamanho do bloco, e não da resolução: com blocos de 512 pixels, variou de 1.793 MiB (720p) a 2.407 MiB (2160p), e com blocos de 256 pixels, de 955 MiB a 1.189 MiB. A parcela que ainda cresce com a resolução inclui os quadros de entrada e de saída, mantidos inteiros na VRAM (cerca de 250 MB em 2160p), e, possivelmente, a memória que o ONNX Runtime reserva para recortes de formatos diferentes nas bordas do quadro e não devolve. Com blocos de 1024 pixels, o recorte com margem tem 1.216 pixels de lado, e o pico ainda cresce com a resolução até saturar a VRAM em 2160p.
+
+\begin{figure}[H]
+    \centering
+    \caption{Pico de VRAM do processo do motor em blocos, comparado ao motor com o quadro inteiro e à \textit{baseline}.}
+    \label{fig:vram_blocos}
+    \includegraphics[width=\textwidth]{imagens/vram_blocos.pdf}
+    \legend{Fonte: Elaborado pelo autor (2026)}
+\end{figure}
+
+O custo em latência dos blocos tem duas origens, separadas na Tabela~\ref{tab:sobrecarga_blocos}. A principal é a redundância das margens: como cada recorte inclui 96 pixels de cada lado, a rede processa, somados todos os blocos, de 1,15 a 2,9 vezes a área do quadro, conforme a resolução e o tamanho do bloco. A segunda é a eficiência por pixel: em 1080p, o tempo de inferência por megapixel processado sobe de 131,7 ms no quadro inteiro para 152,7 a 194,9 ms nos blocos, possivelmente porque recortes menores ocupam menos a GPU e porque os blocos da borda do quadro têm formatos diferentes. Em 2160p, em que a maior parte dos blocos tem o formato completo, a eficiência por pixel fica próxima da do quadro inteiro (137 a 142 ms por megapixel). O cálculo das estatísticas globais e os recortes dos blocos respondem por menos de 0,4\% do tempo por quadro.
+
+\begin{table}[H]
+\centering
+\caption{Área processada pela rede e tempo de inferência no motor em blocos}
+\label{tab:sobrecarga_blocos}
+\footnotesize
+\begin{tabular}{llrrrr}
+\toprule
+\textbf{Res.} & \textbf{Configuração} & \textbf{Recortes} & \textbf{Área processada} & \textbf{Inferência (ms)} & \textbf{ms por megapixel} \\
+\midrule
+1080p & Quadro inteiro & 1 & 1,00$\times$ & 273,1 & 131,7 \\
+1080p & Blocos 1024 & 4 & 1,25$\times$ & 397,4 & 152,7 \\
+1080p & Blocos 512 & 12 & 1,71$\times$ & 641,0 & 180,3 \\
+1080p & Blocos 256 & 40 & 2,85$\times$ & 1.149,9 & 194,9 \\
+\midrule
+2160p & Blocos 1024 & 12 & 1,35$\times$ & 1.542,1$^{*}$ & 137,3 \\
+2160p & Blocos 512 & 40 & 1,83$\times$ & 2.156,1 & 142,1 \\
+2160p & Blocos 256 & 135 & 2,91$\times$ & 3.332,4 & 138,1 \\
+\bottomrule
+\end{tabular}
+\legend{Área processada: soma das áreas dos recortes (bloco com margem) em relação à área do quadro. Ms por megapixel: tempo de inferência dividido pela área processada. $^{*}$ VRAM saturada. Fonte: Elaborado pelo autor (2026)}
+\end{table}
+
+% ---------------------------------------------------------------
 \section{Discussão frente à hipótese}
 \label{sec:discussao}
 
@@ -1229,6 +1318,31 @@ A hipótese foi, portanto, \textbf{confirmada apenas parcialmente}. A redução 
 
 Esse resultado indica que o benefício esperado sobre a memória não decorre automaticamente da troca de linguagem ou de \textit{framework}, mas depende de um controle explícito do uso de memória --- em particular, de não manter simultaneamente na VRAM os tensores de filtros e as ativações intermediárias do quadro inteiro. Indica também uma distinção que a formulação inicial da hipótese não fazia: a separabilidade dos filtros é o que torna o modelo executável em 1080p em uma GPU de 8 GB (1,6 GB de filtros contra os 40 GB de um \textit{kernel} bidimensional), mas, como está presente nas duas implementações, ela não explica as diferenças entre elas. Essas diferenças decorrem da forma de execução.
 
+A segunda versão do motor introduz esse controle explícito, e a Tabela~\ref{tab:hipotese_blocos} aplica a ela os mesmos critérios, nas mesmas resoluções. O critério de fidelidade (H3) é atendido por todos os tamanhos de bloco (Seção~\ref{sec:res_blocos}).
+
+\begin{table}[H]
+\centering
+\caption{Avaliação dos critérios da hipótese para o motor em blocos, em 720p e 1080p}
+\label{tab:hipotese_blocos}
+\small
+\begin{tabularx}{\textwidth}{@{}p{2.2cm}YYp{1.6cm}p{1.6cm}@{}}
+\toprule
+\textbf{Bloco} & \textbf{Latência (720p / 1080p)} & \textbf{VRAM (720p / 1080p)} & \textbf{H1} & \textbf{H2} \\
+\midrule
+1024 pixels & $+3{,}1\%$ / $+6{,}5\%$ & 133\% / 91\% & Não atendido & Não atendido \\
+\midrule
+512 pixels & $+106\%$ / $+67\%$ & 83\% / 48\% & Não atendido & Atendido \\
+\midrule
+256 pixels & $+209\%$ / $+195\%$ & 44\% / 22\% & Não atendido & Atendido \\
+\bottomrule
+\end{tabularx}
+\legend{Latência: variação em relação à \textit{baseline}. VRAM: pico do motor como fração do pico da \textit{baseline} (limiar de 90\%); nenhuma das execuções saturou a VRAM. Medições da segunda bateria. Fonte: Elaborado pelo autor (2026)}
+\end{table}
+
+Nas resoluções em que os critérios foram definidos, nenhuma configuração atende H1 e H2 ao mesmo tempo. Os blocos de 512 e de 256 pixels cumprem o critério de memória, mas com latências maiores que as da \textit{baseline}; os blocos de 1024 pixels ficam a um ponto percentual do limiar de VRAM em 1080p e também são mais lentos que a \textit{baseline}. O compromisso entre memória e latência é, portanto, o resultado central da segunda versão: o motor com o quadro inteiro é a opção mais rápida enquanto a VRAM é suficiente, e o processamento em blocos é o que mantém o motor utilizável quando ela não é. Esse compromisso decorre principalmente do reprocessamento das margens (Tabela~\ref{tab:sobrecarga_blocos}), e não de uma ineficiência da execução em C++.
+
+Em 1440p e 2160p, fora do alcance dos critérios porque a \textit{baseline} satura a VRAM, o quadro se inverte. Com blocos de 512 ou de 256 pixels, o motor processou todas as resoluções sem saturar a VRAM, e os blocos de 1024 e de 512 pixels foram mais rápidos que a \textit{baseline} em 1440p ($-43{,}7\%$ e $-30{,}1\%$; teste $t$ de Welch unilateral, $p < 0{,}001$). Em 2160p, a diferença também é significativa ($p < 0{,}001$), mas foi estimada com apenas três medições por condição e contra uma \textit{baseline} que opera em grande parte na memória principal. Nessas resoluções, a vantagem do motor em blocos decorre de evitar a saturação, e não de uma execução mais rápida da mesma quantidade de trabalho.
+
 % ===============================================================
 % CAPÍTULO 6 - CONCLUSÃO
 % ===============================================================
@@ -1237,19 +1351,20 @@ Esse resultado indica que o benefício esperado sobre a memória não decorre au
 
 Este trabalho investigou em que medida um motor de inferência nativo em C++ e CUDA para o modelo SepConv é capaz de reduzir a latência e o consumo de VRAM em uma GPU de consumo de 8 GB, mantendo a fidelidade visual da implementação original (Seção~\ref{sec:problema}). Para isso, foi desenvolvido um motor que integra a leitura de vídeo pela OpenCV, a inferência da rede SepConv++ pelo ONNX Runtime com \textit{I/O binding} e um \textit{kernel} CUDA próprio para a síntese do quadro, numericamente equivalente à implementação original em PyTorch (93,67 dB de PSNR entre as saídas). A exportação do modelo para ONNX foi corrigida para aceitar resoluções arbitrárias e validada contra a rede original.
 
-A resposta à questão de pesquisa depende da métrica considerada. Quanto à \textbf{latência}, o motor C++ reduziu o tempo por quadro em cerca de 24\% em 720p e 1080p, de 404,9 ms para 305,5 ms em 1080p, com quadros de fidelidade idêntica à da implementação original. Quanto ao \textbf{consumo de VRAM}, a primeira versão do motor não trouxe redução: consumiu cerca de 45\% mais memória que a \textit{baseline} e, a partir de 1440p, ficou mais lento que ela, chegando a falhar em 2160p. A transposição para C++ é, portanto, suficiente para reduzir a latência, mas não para reduzir a memória; para isso, é necessário um controle explícito da alocação, que a primeira versão ainda não exerce. Esse controle foi introduzido em uma segunda versão do motor, com processamento em blocos (Seção~\ref{sec:tiling}), cuja saída é equivalente à do quadro inteiro e cuja avaliação de desempenho completa os resultados deste trabalho.
+A resposta à questão de pesquisa depende da métrica considerada. Quanto à \textbf{latência}, o motor C++ reduziu o tempo por quadro em cerca de 24\% em 720p e 1080p, de 404,9 ms para 305,5 ms em 1080p, com quadros de fidelidade idêntica à da implementação original. Quanto ao \textbf{consumo de VRAM}, a primeira versão do motor não trouxe redução: consumiu cerca de 45\% mais memória que a \textit{baseline} e, a partir de 1440p, ficou mais lento que ela, chegando a falhar em 2160p. A transposição para C++ é, portanto, suficiente para reduzir a latência, mas não para reduzir a memória; para isso, é necessário um controle explícito da alocação, que a primeira versão ainda não exerce. Esse controle foi introduzido em uma segunda versão do motor, com processamento em blocos (Seção~\ref{sec:tiling}), de saída equivalente à do quadro inteiro. Com ela, o pico de VRAM passou a depender do tamanho do bloco --- no máximo 2.407 MiB com blocos de 512 pixels, mesmo em 2160p --- e o motor processou todas as resoluções sem saturar a VRAM, sendo mais rápido que a \textit{baseline} em 1440p e 2160p. Em 720p e 1080p, porém, os blocos aumentaram a latência, e nenhuma configuração atendeu aos critérios de latência e de memória ao mesmo tempo: a redução de memória tem como custo o reprocessamento das margens dos blocos.
 
-Como contribuições, destacam-se: a correção da exportação ONNX do modelo para resoluções arbitrárias; um motor de inferência em C++/CUDA verificado contra a implementação original; uma bateria de testes reprodutível, com medição por estágio e critérios de VRAM que consideram o \textit{Sysmem Fallback} do Windows; o processamento em blocos com normalização global e margem de sobreposição definida experimentalmente; e a constatação, relatada mesmo sendo contrária à hipótese inicial, de que a troca de linguagem e de \textit{framework} não reduz por si só o consumo de memória.
+Como contribuições, destacam-se: a correção da exportação ONNX do modelo para resoluções arbitrárias; um motor de inferência em C++/CUDA verificado contra a implementação original; uma bateria de testes reprodutível, com medição por estágio e critérios de VRAM que consideram o \textit{Sysmem Fallback} do Windows; o processamento em blocos com normalização global e margem de sobreposição definida experimentalmente, com a quantificação do seu compromisso entre memória e latência; e a constatação, relatada mesmo sendo contrária à hipótese inicial, de que a troca de linguagem e de \textit{framework} não reduz por si só o consumo de memória.
 
 \section{Limitações}
 \label{sec:limitacoes}
 
 \begin{itemize}
-    \item A avaliação utilizou um único trecho de vídeo de 61 quadros, e cada condição foi executada uma única vez, sem fixação dos \textit{clocks} da GPU;
+    \item A avaliação utilizou um único trecho de vídeo de 61 quadros, sem fixação dos \textit{clocks} da GPU. Apenas as condições da primeira versão foram executadas em duas baterias, com diferenças inferiores a 0,5\% fora da saturação; as do motor em blocos foram executadas uma única vez;
     \item Em 2160p, apenas quatro quadros sintetizados foram avaliados, e o VMAF utilizou o modelo calibrado para 1080p;
     \item A \textit{baseline} foi medida apenas pelo tempo total, o que impede atribuir a redução de latência a um estágio específico;
     \item A condição de controle (ONNX Runtime sem o \textit{kernel} próprio) não foi executada, de modo que não é possível separar o efeito do mecanismo de inferência do efeito do \textit{kernel} de síntese;
-    \item As causas do maior consumo de VRAM do motor (tensores de filtros mantidos alocados e \textit{arena} do ONNX Runtime) foram identificadas na análise da implementação, mas não isoladas experimentalmente;
+    \item As causas do maior consumo de VRAM da primeira versão (tensores de filtros mantidos alocados e \textit{arena} do ONNX Runtime) foram identificadas na análise da implementação. A redução obtida com os blocos confirma o peso dos tensores proporcionais à área processada, mas a contribuição da \textit{arena} não foi isolada;
+    \item O custo do processamento em blocos foi decomposto pela área processada; as causas da menor eficiência por pixel dos blocos pequenos não foram isoladas;
     \item No Windows, a NVML não informa o consumo por processo, e o consumo foi estimado pela diferença em relação à linha de base da GPU.
 \end{itemize}
 
@@ -1257,7 +1372,7 @@ Como contribuições, destacam-se: a correção da exportação ONNX do modelo p
 \label{sec:trabalhos_futuros}
 
 \begin{enumerate}
-    \item \textbf{Avaliação do processamento em blocos}: medir a segunda versão do motor (Seção~\ref{sec:tiling}) em todas as resoluções, com blocos de 256, 512 e 1024 pixels, verificando se ela viabiliza 1440p e 2160p dentro do limite de 8 GB e qual o custo em latência;
+    \item \textbf{Redução do custo do processamento em blocos}: escolher o tamanho do bloco automaticamente a partir da VRAM livre, usando o quadro inteiro sempre que ele couber; usar recortes de formato fixo, para evitar formatos irregulares nas bordas do quadro; e avaliar margens menores, reduzindo a área reprocessada;
     \item \textbf{Configuração do alocador do ONNX Runtime}: limitar a \textit{arena} e liberá-la entre execuções, separando a VRAM ocupada pelo ONNX Runtime da ocupada pelos \textit{buffers} do motor para confirmar as causas apontadas na Seção~\ref{sec:res_vram};
     \item \textbf{Precisão reduzida (FP16)}: avaliar a redução de memória e de latência obtida com a inferência em meia precisão, medindo o impacto correspondente nas métricas de fidelidade;
     \item \textbf{Condição de controle e medição por estágio da \textit{baseline}}: executar a condição de controle e instrumentar a \textit{baseline} por estágio, para localizar a origem da redução de latência;
