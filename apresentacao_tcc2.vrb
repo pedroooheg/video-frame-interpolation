@@ -1,0 +1,31 @@
+\frametitle{Apoio: trecho do \textit {kernel} de síntese}
+\tiny
+\begin{verbatim}
+__device__ float accumulate_frame(const float* frame, const Filter* ver,
+                                  const Filter* hor, ..., int x, int y, float acc[3])
+{
+    constexpr int R = K / 2;               // raio = 25
+    float h[K]; int sx[K]; float hor_sum = 0.0f;
+
+    for (int fx = 0; fx < K; ++fx) {       // le o filtro horizontal uma vez
+        h[fx]  = to_float(hor[fx * filter_plane + filter_pixel]);
+        sx[fx] = min(max(x + fx - R, 0), width - 1);   // borda replicada
+        hor_sum += h[fx];
+    }
+
+    float ver_sum = 0.0f;
+    for (int fy = 0; fy < K; ++fy) {       // para cada linha da vizinhanca
+        const float v = to_float(ver[fy * filter_plane + filter_pixel]);
+        ver_sum += v;
+        const int sy = min(max(y + fy - R, 0), height - 1);
+        const float* row = frame + (size_t)sy * width;
+
+        float row_b = 0, row_g = 0, row_r = 0;
+        for (int fx = 0; fx < K; ++fx) {   // convolucao horizontal da linha
+            row_b += h[fx] * row[sx[fx]];
+            row_g += h[fx] * row[plane + sx[fx]];
+            // ... idem para o canal R; depois, acumula com o peso v
+\end{verbatim}
+\normalsize
+\vspace{-4pt}
+Os dois laços aninhados mostram as $N^2$ multiplicações por pixel: a separabilidade reduz a memória, não as contas.
