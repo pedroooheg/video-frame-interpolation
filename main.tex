@@ -3,8 +3,7 @@
 % ---------------------------------------------------------------
 % Trabalho de Conclusão de Curso
 % Estrutura: Introdução, Revisão Bibliográfica, Desenvolvimento,
-%            Metodologia, Resultados e Discussão, Conclusão,
-%            Referências Bibliográficas
+%            Conclusão, Referências Bibliográficas
 % ---------------------------------------------------------------
 
 \documentclass[
@@ -69,6 +68,28 @@
 \definecolor{senacblue}{RGB}{41,5,195}
 
 % ---------------------------------------------------------------
+% TAMANHO DA FONTE DAS LEGENDAS (ABNT) -- 10 pt
+% ---------------------------------------------------------------
+\renewcommand{\ABNTEXfontereduzida}{\fontsize{10}{12}\selectfont}
+\captionnamefont{\ABNTEXfontereduzida}   % rótulo "Figura N"/"Tabela N"
+\captiontitlefont{\ABNTEXfontereduzida}  % texto do título da legenda
+\makeatletter
+\renewcommand{\legend}[1]{%
+  \M@gettitle{#1}%
+  \memlegendinfo{#1}%
+  \par
+  \begingroup
+    \@parboxrestore
+    \if@minipage
+      \@setminipage
+    \fi
+    \ABNTEXfontereduzida
+    \captiondelim{\mbox{}}%
+    \@makecaption{}{\ignorespaces #1}\par
+  \endgroup}
+\makeatother
+
+% ---------------------------------------------------------------
 % INFORMAÇÕES DO DOCUMENTO
 % ---------------------------------------------------------------
 \titulo{Análise Experimental da Inferência SepConv em C++ com Ênfase em Eficiência Computacional e Uso de VRAM}
@@ -124,7 +145,7 @@
 % RESUMO
 % ---------------------------------------------------------------
 \begin{resumo}
-A disseminação de monitores com taxas de atualização de 60 Hz a 144 Hz evidenciou a limitação temporal de conteúdos audiovisuais capturados a 24 FPS ou 30 FPS. A Interpolação de Quadros de Vídeo (VFI -- \textit{Video Frame Interpolation}) sintetiza quadros intermediários para aumentar a fluidez, mas modelos de aprendizado profundo executados em \textit{frameworks} de alto nível, como o PyTorch, demandam grande quantidade de memória de vídeo (VRAM). As Convoluções Adaptativas Separáveis (SepConv) estimam, para cada pixel, um par de filtros unidimensionais de $N$ coeficientes em vez de um filtro bidimensional de $N^2$ coeficientes, o que reduz a memória ocupada pelos filtros (cerca de 1,6 GB contra 40 GB em 1080p, com $N = 51$), embora a síntese continue realizando $N^2$ multiplicações por pixel. Este trabalho avaliou experimentalmente se um motor de inferência nativo em C++ e CUDA para o modelo SepConv++ reduz a latência e o pico de VRAM em uma GPU de consumo de 8 GB, em comparação com a implementação original em Python/PyTorch. O motor integra a biblioteca OpenCV para entrada e saída, a API C++ do ONNX Runtime com \textit{I/O binding} para a inferência da rede e um \textit{kernel} CUDA próprio para a convolução separável. As duas implementações interpolaram com fator $2\times$ um trecho de 61 quadros de vídeo em 720p, 1080p, 1440p e 2160p, com medição da latência por quadro, do pico de VRAM via NVML e da fidelidade visual por PSNR, SSIM e VMAF. Em 720p e 1080p, o motor C++ reduziu a latência em cerca de 24\% (305,5 ms contra 404,9 ms por quadro em 1080p) e produziu quadros com a mesma fidelidade da implementação original (34,10 dB de PSNR em 1080p nas duas), mas consumiu cerca de 45\% mais VRAM (6.648 MiB contra 4.585 MiB). A partir de 1440p, a VRAM se esgotou: o motor ficou 5,8 vezes mais lento que a implementação original e falhou em 2160p. Uma segunda versão, com processamento em blocos, fez o pico de VRAM depender do tamanho do bloco, e não da resolução, mas aumentou a latência em 720p e 1080p. Uma terceira versão desativou o padrão de memória do ONNX Runtime, principal fonte do consumo excedente, e passou a executar a rede em meia precisão (FP16). Com o quadro inteiro em FP16, o motor reduziu a latência em 55\% (183,0 ms contra 406,3 ms em 1080p) e o pico de VRAM em 33\% em relação à implementação original, com a mesma fidelidade no vídeo de teste e nos conjuntos Middlebury e Vimeo-90K; em 1440p, foi 4,1 vezes mais rápido sem saturar a VRAM e, em 2160p, com blocos, sintetizou cada quadro em 1,19 s, contra 66,6 s. Com a implementação original também em FP16, o motor manteve a vantagem em 1080p, com 39,8\% menos latência e 20\% menos VRAM. Conclui-se que a transposição da inferência para C++ reduz a latência sem perda de qualidade, mas que a redução de VRAM não decorre da troca de linguagem ou de \textit{framework}: ela depende de decisões explícitas de gerenciamento de memória e de precisão numérica, que o motor nativo torna controláveis.
+Monitores e televisores modernos exibem mais quadros por segundo do que grande parte dos vídeos contém. A interpolação de quadros gera imagens intermediárias para reduzir essa diferença, mas os modelos de aprendizado profundo usados nessa tarefa exigem muito tempo de processamento e memória de vídeo (VRAM), o que dificulta sua execução em placas gráficas de uso doméstico. Este trabalho verificou se a execução do modelo SepConv++ em um motor nativo em C++ e CUDA reduz o tempo por quadro e o consumo de VRAM em uma GPU de 8 GB, sem perda de qualidade, em comparação com a implementação original em Python e PyTorch. As duas implementações processaram o mesmo trecho de vídeo em resoluções de 720p a 2160p, e a qualidade também foi avaliada em dois conjuntos de referência. A primeira versão do motor reduziu o tempo em cerca de um quarto, com a mesma qualidade, mas consumiu mais VRAM que a implementação original. O consumo só caiu após ajustes no alocador de memória e o uso de meia precisão numérica: em 1080p, o motor passou a levar menos da metade do tempo, com cerca de um terço a menos de VRAM, e manteve a vantagem quando a implementação original também usou meia precisão. O processamento em blocos permitiu ainda tratar vídeos em 2160p dentro do limite de memória da GPU. Conclui-se que a transposição para C++ reduz o tempo de processamento, mas que a economia de memória não decorre da troca de linguagem: ela depende de decisões explícitas sobre o uso de memória e a precisão numérica, que o motor nativo torna controláveis.
 
 \vspace{\onelineskip}
 
@@ -134,7 +155,7 @@ A disseminação de monitores com taxas de atualização de 60 Hz a 144 Hz evide
 
 \begin{resumo}[Abstract]
  \begin{otherlanguage*}{english}
-The spread of displays with refresh rates from 60 Hz to 144 Hz has highlighted the temporal limitation of audiovisual content captured at 24 FPS or 30 FPS. Video Frame Interpolation (VFI) synthesizes intermediate frames to increase smoothness, but deep learning models executed on high-level frameworks, such as PyTorch, demand large amounts of video memory (VRAM). Adaptive Separable Convolutions (SepConv) estimate, for each pixel, a pair of one-dimensional filters with $N$ coefficients instead of a two-dimensional filter with $N^2$ coefficients, which reduces the memory occupied by the filters (about 1.6 GB versus 40 GB at 1080p, with $N = 51$), although the synthesis still performs $N^2$ multiplications per pixel. This work experimentally evaluated whether a native C++ and CUDA inference engine for the SepConv++ model reduces latency and peak VRAM usage on an 8 GB consumer GPU, compared with the original Python/PyTorch implementation. The engine integrates the OpenCV library for input and output, the ONNX Runtime C++ API with I/O binding for network inference, and a custom CUDA kernel for the separable convolution. Both implementations interpolated a 61-frame video excerpt with a $2\times$ factor at 720p, 1080p, 1440p and 2160p, measuring per-frame latency, peak VRAM via NVML, and visual fidelity through PSNR, SSIM and VMAF. At 720p and 1080p, the C++ engine reduced latency by about 24\% (305.5 ms versus 404.9 ms per frame at 1080p) and produced frames with the same fidelity as the original implementation (34.10 dB PSNR at 1080p for both), but consumed about 45\% more VRAM (6,648 MiB versus 4,585 MiB). From 1440p onwards, VRAM was exhausted: the engine became 5.8 times slower than the original implementation and failed at 2160p. A second version, with tiled processing, made peak VRAM depend on the tile size rather than on the resolution, but increased latency at 720p and 1080p. A third version disabled the ONNX Runtime memory pattern, the main source of the excess consumption, and ran the network in half precision (FP16). With the whole frame in FP16, the engine reduced latency by 55\% (183.0 ms versus 406.3 ms at 1080p) and peak VRAM by 33\% compared with the original implementation, with the same fidelity on the test video and on the Middlebury and Vimeo-90K datasets; at 1440p, it was 4.1 times faster without saturating VRAM and, at 2160p, using tiles, it synthesized each frame in 1.19 s, versus 66.6 s. With the original implementation also in FP16, the engine kept its advantage at 1080p, with 39.8\% lower latency and 20\% less VRAM. It is concluded that moving inference to C++ reduces latency without loss of quality, but that VRAM reduction does not follow from the change of language or framework: it depends on explicit memory-management and numerical-precision decisions, which the native engine makes controllable.
+Modern monitors and televisions display more frames per second than a large share of videos contain. Frame interpolation generates intermediate images to reduce this gap, but the deep learning models used for this task demand a great deal of processing time and video memory (VRAM), which makes them hard to run on consumer graphics cards. This work verified whether running the SepConv++ model on a native C++ and CUDA engine reduces the time per frame and the VRAM usage on an 8 GB GPU, without loss of quality, compared with the original Python and PyTorch implementation. Both implementations processed the same video excerpt at resolutions from 720p to 2160p, and quality was also evaluated on two reference datasets. The first version of the engine reduced the time by about a quarter, with the same quality, but used more VRAM than the original implementation. Memory usage only dropped after adjusting the memory allocator and using half numerical precision: at 1080p, the engine took less than half the time, with about one third less VRAM, and kept its advantage when the original implementation also used half precision. Tiled processing also made it possible to handle 2160p videos within the memory limit of the GPU. It is concluded that moving to C++ reduces processing time, but that memory savings do not follow from the change of language: they depend on explicit decisions about memory usage and numerical precision, which the native engine makes controllable.
 
    \vspace{\onelineskip}
 
@@ -142,6 +163,20 @@ The spread of displays with refresh rates from 60 Hz to 144 Hz has highlighted t
    \textbf{Keywords}: Video Frame Interpolation. Adaptive Separable Convolutions. C++. CUDA. VRAM Optimization. SepConv.
  \end{otherlanguage*}
 \end{resumo}
+
+% ---------------------------------------------------------------
+% LISTA DE ILUSTRAÇÕES (FIGURAS)
+% ---------------------------------------------------------------
+\pdfbookmark[0]{\listfigurename}{lof}
+\listoffigures*
+\cleardoublepage
+
+% ---------------------------------------------------------------
+% LISTA DE TABELAS
+% ---------------------------------------------------------------
+\pdfbookmark[0]{\listtablename}{lot}
+\listoftables*
+\cleardoublepage
 
 % ---------------------------------------------------------------
 % LISTA DE ABREVIATURAS E SIGLAS
@@ -159,18 +194,19 @@ The spread of displays with refresh rates from 60 Hz to 144 Hz has highlighted t
 \toprule
 \textbf{Abreviatura/Sigla} & \textbf{Significado} \\
 \midrule
-ABNT  & Associação Brasileira de Normas Técnicas \\
-ALU   & \textit{Arithmetic Logic Unit} (Unidade Lógica e Aritmética) \\
 API   & \textit{Application Programming Interface} (Interface de Programação de Aplicações) \\
-CLI   & \textit{Command-Line Interface} (Interface de Linha de Comando) \\
+BGR   & \textit{Blue, Green, Red} (ordem dos canais de cor) \\
+CNN   & \textit{Convolutional Neural Network} (Rede Neural Convolucional) \\
 CPU   & \textit{Central Processing Unit} (Unidade Central de Processamento) \\
+CSV   & \textit{Comma-Separated Values} (Valores Separados por Vírgula) \\
 CUDA  & \textit{Compute Unified Device Architecture} \\
+DLM   & \textit{Detail Loss Metric} \\
 EP    & \textit{Execution Provider} (Provedor de Execução do ONNX Runtime) \\
 FFV1  & \textit{FFmpeg Video Codec 1} (codec de vídeo sem perdas) \\
 FLOPs & \textit{Floating Point Operations} (Operações de Ponto Flutuante) \\
 FP16  & Ponto flutuante de 16 bits (meia precisão) \\
+FP32  & Ponto flutuante de 32 bits (precisão simples) \\
 FPS   & \textit{Frames Per Second} (Quadros por Segundo) \\
-GPGPU & \textit{General-Purpose Computing on Graphics Processing Units} \\
 GPU   & \textit{Graphics Processing Unit} (Unidade de Processamento Gráfico) \\
 I/O   & \textit{Input/Output} (Entrada e Saída) \\
 MiB   & \textit{Mebibyte} ($2^{20}$ bytes) \\
@@ -181,12 +217,14 @@ PCIe  & \textit{Peripheral Component Interconnect Express} \\
 PSNR  & \textit{Peak Signal-to-Noise Ratio} \\
 RAFT  & \textit{Recurrent All-Pairs Field Transforms} \\
 RAM   & \textit{Random Access Memory} \\
+RGB   & \textit{Red, Green, Blue} (ordem dos canais de cor) \\
 SIMT  & \textit{Single Instruction, Multiple Threads} \\
 SM    & \textit{Streaming Multiprocessor} \\
 SSIM  & \textit{Structural Similarity Index} \\
 TCC   & Trabalho de Conclusão de Curso \\
 TF32  & \textit{TensorFloat-32} \\
 VFI  & \textit{Video Frame Interpolation} (Interpolação de Quadros de Vídeo) \\
+VIF   & \textit{Visual Information Fidelity} \\
 VMAF  & \textit{Video Multimethod Assessment Fusion} \\
 VRAM  & \textit{Video Random Access Memory} \\
 \bottomrule
@@ -199,7 +237,7 @@ VRAM  & \textit{Video Random Access Memory} \\
 % SUMÁRIO
 % ---------------------------------------------------------------
 \pdfbookmark[0]{\contentsname}{toc}
-\tableofcontents
+\tableofcontents*
 \cleardoublepage
 
 % ---------------------------------------------------------------
@@ -216,16 +254,16 @@ VRAM  & \textit{Video Random Access Memory} \\
 
 Historicamente, os sistemas de captura e exibição de imagens em movimento foram limitados pela capacidade mecânica e elétrica dos dispositivos da época. Durante a consolidação do cinema sonoro no início do século XX, a taxa de aproximadamente 24 quadros por segundo (FPS) tornou-se um padrão industrial por representar um equilíbrio entre fluidez perceptiva e custo de armazenamento e reprodução do filme físico \cite{Bordwell2016}. Taxas nessa faixa passaram a ser suficientes para produzir a percepção de movimento contínuo ao sistema visual humano, reduzindo a percepção de descontinuidade temporal durante a projeção \cite{Watkinson2009}.
 
-Com a evolução tecnológica dos dispositivos de exibição, monitores e televisores modernos passaram a operar em frequências significativamente superiores, variando entre 60 Hz e 144 Hz. Entretanto, grande parte do conteúdo audiovisual disponível ainda permanece limitada às taxas tradicionais de captura, como 24 FPS ou 30 FPS, criando uma discrepância entre a capacidade de atualização do hardware atual e a quantidade de informação temporal presente no vídeo original. Essa diferença entre a taxa de amostragem temporal do conteúdo original e a frequência de atualização do dispositivo de exibição resulta no fenômeno conhecido como subamostragem temporal. De acordo com \citeonline{Watkinson2009} e \citeonline{Szeliski2022}, a incapacidade de fornecer amostras intermediárias suficientes durante movimentos rápidos reduz a percepção de continuidade temporal pelo sistema visual humano, induzindo a artefatos perceptuais como tremulação de movimento (\textit{motion judder}), borramento dinâmico e quebra na percepção de fluidez contínua.
+Com a evolução tecnológica dos dispositivos de exibição, monitores e televisores modernos passaram a operar em frequências superiores, entre 60 Hz e 144 Hz. Entretanto, grande parte do conteúdo audiovisual disponível ainda permanece limitada às taxas tradicionais de captura, como 24 FPS ou 30 FPS, criando uma discrepância entre a capacidade de atualização do hardware atual e a quantidade de informação temporal presente no vídeo original. Essa diferença entre a taxa de amostragem temporal do conteúdo original e a frequência de atualização do dispositivo de exibição resulta no fenômeno conhecido como subamostragem temporal. De acordo com \citeonline{Watkinson2009} e \citeonline{Szeliski2022}, a incapacidade de fornecer amostras intermediárias suficientes durante movimentos rápidos reduz a percepção de continuidade temporal pelo sistema visual humano, induzindo a artefatos perceptuais como tremulação de movimento (\textit{motion judder}), borramento dinâmico e quebra na percepção de fluidez contínua.
 
-Nesse contexto, a Interpolação de Quadros de Vídeo (VFI -- \textit{Video Frame Interpolation}) surge como uma técnica essencial para sintetizar quadros intermediários artificialmente, aumentando a fluidez temporal do conteúdo exibido. Tradicionalmente, a literatura divide as abordagens de VFI em métodos baseados em fluxo óptico, como o modelo RAFT \cite{Teed2020}, e métodos baseados em \textit{kernels}. Embora modelos de aprendizado profundo tenham atingido patamares elevados de precisão, eles frequentemente demandam recursos computacionais extensivos e dependem de \textit{frameworks} pesados, o que limita sua aplicação em cenários de hardware restrito ou escassez de memória RAM e VRAM.
+Nesse contexto, a Interpolação de Quadros de Vídeo (VFI, do inglês \textit{Video Frame Interpolation}) é uma técnica que sintetiza quadros intermediários, aumentando a fluidez temporal do conteúdo exibido. Tradicionalmente, a literatura divide as abordagens de VFI em métodos baseados em fluxo óptico, como o modelo RAFT \cite{Teed2020}, e métodos baseados em \textit{kernels}. Embora modelos de aprendizado profundo tenham atingido patamares elevados de precisão, eles frequentemente demandam recursos computacionais extensivos e dependem de \textit{frameworks} pesados, o que limita sua aplicação em cenários de hardware restrito ou escassez de memória RAM e VRAM.
 
-Para mitigar a alta demanda de recursos computacionais --- representada pelo elevado volume de operações de ponto flutuante (FLOPs), pelo esgotamento do armazenamento de tensores na memória de vídeo (VRAM) e pela alta latência de execução ---, a literatura recente busca alternativas mais eficientes aos modelos tradicionais de fluxo óptico. Em cenários de hardware restrito, típicos de computadores pessoais e dispositivos de consumo doméstico dotados de GPUs comerciais limitadas a 8 GB de VRAM, a execução de modelos densos em \textit{frameworks} de alto nível (como PyTorch) torna-se inviável em altas resoluções. Nesse contexto, \citeonline{Niklaus2017} propuseram as Convoluções Adaptativas Separáveis, nas quais a rede neural estima, para cada pixel, um par de filtros unidimensionais de $N$ coeficientes em vez de um \textit{kernel} bidimensional de $N \times N$ coeficientes. Essa formulação reduz de $N^2$ para $2N$ a quantidade de coeficientes estimados e armazenados por pixel e, portanto, a memória ocupada pelos tensores de filtros. A implementação dessa etapa de inferência em linguagem de baixo nível (C++/CUDA) possibilita um controle granular sobre o gerenciamento de memória gráfica, permitindo isolar a eficiência do algoritmo e testar sua viabilidade em computadores comuns.
+Esses modelos exigem grande volume de operações de ponto flutuante (FLOPs), ocupam a memória de vídeo (VRAM) com tensores e têm alta latência de execução. Por isso, a literatura recente busca alternativas mais eficientes aos modelos tradicionais de fluxo óptico. Em cenários de hardware restrito, típicos de computadores pessoais e dispositivos de consumo doméstico dotados de GPUs comerciais limitadas a 8 GB de VRAM, a execução de modelos densos em \textit{frameworks} de alto nível (como PyTorch) torna-se inviável em altas resoluções. Nesse contexto, \citeonline{Niklaus2017} propuseram as Convoluções Adaptativas Separáveis, nas quais a rede neural estima, para cada pixel, um par de filtros unidimensionais de $N$ coeficientes em vez de um \textit{kernel} bidimensional de $N \times N$ coeficientes. Essa formulação reduz de $N^2$ para $2N$ a quantidade de coeficientes estimados e armazenados por pixel e, portanto, a memória ocupada pelos tensores de filtros. A implementação dessa etapa de inferência em linguagem de baixo nível (C++/CUDA) possibilita um controle direto sobre o gerenciamento de memória gráfica, permitindo isolar a eficiência do algoritmo e testar sua viabilidade em computadores comuns.
 
 Diante desse cenário, este trabalho investiga experimentalmente se a execução nativa da inferência do modelo SepConv em C++ e CUDA reduz a latência e o consumo de VRAM em uma GPU de consumo de 8 GB, em comparação com a implementação original em Python/PyTorch, sem degradar a fidelidade visual dos quadros sintetizados. A questão de pesquisa, os objetivos e a hipótese são formalizados nas Seções~\ref{sec:problema} e~\ref{sec:objetivos}.
 
 % ---------------------------------------------------------------
-\section{Contexto}
+\section{Contextualização do problema}
 \label{sec:contexto}
 
 Diferente de métodos simplificados de amostragem de quadros, como a repetição ou a mistura linear de quadros vizinhos, a VFI busca sintetizar um novo quadro no instante $t+0{,}5$ por meio de uma combinação ponderada de informações espaciais e temporais das imagens adjacentes. Esse processo considera o contexto do movimento e a correlação entre pixels \cite{Niklaus2017}. Ao elevar a taxa de quadros por segundo, a técnica objetiva atenuar artefatos de movimento na percepção humana. A Figura~\ref{fig:vfi_sequencia} mostra uma sequência real com movimento: as bolas e as mãos mudam de posição entre os quadros, e o objetivo é obter o quadro do meio.
@@ -248,7 +286,7 @@ A Figura~\ref{fig:vfi_metodos} compara essas abordagens na região de maior movi
     \legend{Fonte: Elaborado pelo autor (2026), a partir da sequência Beanbags do conjunto Middlebury \cite{Baker2011}.}
 \end{figure}
 
-Entretanto, a implantação prática desses algoritmos enfrenta barreiras atreladas ao custo computacional espacial e aritmético. Modelos de estado da arte demandam alto armazenamento de tensores intermediários na memória de vídeo (VRAM), limitando frequentemente sua execução a hardwares de alto desempenho \cite{Bao2019}. A transposição de modelos matemáticos para \textit{pipelines} de inferência otimizados surge como um caminho científico relevante para avaliar os reais gargalos de desempenho em sistemas com memória de consumo limitada.
+Entretanto, a implantação prática desses algoritmos enfrenta barreiras atreladas ao custo computacional espacial e aritmético. Modelos de estado da arte demandam alto armazenamento de tensores intermediários na memória de vídeo (VRAM), limitando frequentemente sua execução a hardwares de alto desempenho \cite{Bao2019}. A transposição de modelos matemáticos para \textit{pipelines} de inferência otimizados é um caminho para avaliar os reais gargalos de desempenho em sistemas com memória de consumo limitada.
 
 % ---------------------------------------------------------------
 \section{Formulação do problema}
@@ -268,17 +306,19 @@ Esta seção delimita o escopo técnico da pesquisa, focando na avaliação de d
 
 \subsection{Objetivo geral}
 
-Avaliar experimentalmente o desempenho computacional da inferência do modelo SepConv em GPU, utilizando uma implementação nativa em C++ e CUDA, com ênfase na latência de execução e no pico de consumo de memória VRAM em hardware de consumo.
+Determinar em que medida um motor de inferência nativo em C++ e CUDA para o modelo SepConv reduz a latência por quadro e o pico de VRAM em uma GPU de consumo de 8 GB, em comparação com a implementação original em Python/PyTorch, mantendo a fidelidade visual.
 
 \subsection{Objetivos específicos}
 
+Os objetivos específicos detalham o objetivo geral e são verificados pelas medições da Seção~\ref{sec:resultados}. Os passos de construção do motor fazem parte do método e são descritos na Seção~\ref{sec:detalhes_implementacao}.
+
 \begin{enumerate}
-    \item Desenvolver um módulo de Entrada e Saída (I/O) em C++ e OpenCV para extração e linearização de quadros de vídeo na memória principal (Host) e transferência contígua para a memória gráfica (Device);
-    \item Integrar a API C++ do \textit{ONNX Runtime} (operando via \textit{CUDA Execution Provider}) para carregar o modelo SepConv exportado e inferir na VRAM os filtros unidimensionais ($1D$) de cada pixel;
-    \item Implementar um \textit{kernel} CUDA próprio para a síntese do quadro intermediário a partir dos filtros separáveis, mantendo os dados inteiramente na VRAM;
-    \item Desenvolver um ambiente de testes comparativo entre a implementação nativa proposta (C++/CUDA) e a \textit{baseline} original do modelo SepConv em Python/PyTorch;
-    \item Quantificar a eficiência computacional por meio do monitoramento da latência por quadro (em milissegundos, via \texttt{cudaEventRecord}), da taxa de quadros por segundo (FPS) e do pico de ocupação de VRAM (via biblioteca NVML) para diferentes resoluções de vídeo;
-    \item Avaliar a fidelidade visual dos quadros sintetizados por meio das métricas objetivas \textit{Peak Signal-to-Noise Ratio} (PSNR), \textit{Structural Similarity Index} (SSIM) e \textit{Video Multimethod Assessment Fusion} (VMAF), comparando-os aos quadros reais de um trecho de vídeo de referência.
+    \item Verificar se a inferência do modelo pode ser transposta para um motor nativo com saída numericamente equivalente à da implementação original, comparando os quadros gerados pelas duas;
+    \item Quantificar a diferença de latência por quadro entre as duas implementações, de 720p a 2160p, e verificar se ela atende ao critério H1;
+    \item Determinar se o motor nativo reduz o pico de VRAM conforme o critério H2 e identificar a resolução em que cada implementação esgota a memória da GPU;
+    \item Verificar se os quadros sintetizados pelo motor atendem ao critério de fidelidade H3, no vídeo de teste e em conjuntos de referência;
+    \item Identificar as fontes do consumo de VRAM do motor e medir o efeito do alocador de memória, da precisão numérica e do processamento em blocos sobre a memória, a latência e a fidelidade;
+    \item Separar o efeito da forma de execução do efeito da precisão numérica, comparando as duas implementações em FP32 e em FP16.
 \end{enumerate}
 
 \subsection{Hipótese e critérios de validação}
@@ -298,19 +338,13 @@ Neste trabalho, considera-se \textbf{alta definição} a resolução de 1920 $\t
 \section{Justificativa}
 \label{sec:justificativa}
 
-A escolha pela investigação de algoritmos de interpolação baseados em Convoluções Adaptativas Separáveis justifica-se, primordialmente, pela necessidade de viabilizar a fluidez temporal em computadores pessoais com recursos de memória gráfica restritos. Em um \textit{kernel} adaptativo bidimensional completo, a rede precisaria estimar e armazenar $N^2$ coeficientes por pixel; a decomposição em dois filtros unidimensionais reduz essa quantidade para $2N$. Com $N = 51$, em resolução Full HD, os filtros separáveis ocupam cerca de 1,6 GB, enquanto filtros bidimensionais exigiriam aproximadamente 40 GB (Seção~\ref{sec:kernel_sepconv}). É essa redução do \textit{footprint} (consumo espacial) dos tensores mantidos na VRAM que torna o modelo executável em hardware comercial.
+A escolha pela investigação de algoritmos de interpolação baseados em Convoluções Adaptativas Separáveis justifica-se pela necessidade de viabilizar a fluidez temporal em computadores pessoais com recursos de memória gráfica restritos. Em um \textit{kernel} adaptativo bidimensional completo, a rede precisaria estimar e armazenar $N^2$ coeficientes por pixel; a decomposição em dois filtros unidimensionais reduz essa quantidade para $2N$. Com $N = 51$, em resolução Full HD, os filtros separáveis ocupam cerca de 1,6 GB, enquanto filtros bidimensionais exigiriam aproximadamente 40 GB (Seção~\ref{sec:kernel_sepconv}). É essa redução do \textit{footprint} (consumo espacial) dos tensores mantidos na VRAM que torna o modelo executável em hardware comercial.
 
 A delimitação experimental em GPUs de consumo dotadas de 8 GB de VRAM fundamenta-se na representatividade desse perfil de hardware entre usuários domésticos. Segundo dados da \textit{Steam Hardware \& Software Survey} \cite{SteamSurvey2026}, placas gráficas com 8 GB de memória representam aproximadamente 26\% das configurações ativas no mercado consumidor. Embora modelos corporativos e GPUs de alto desempenho (com 16 GB a 80 GB de VRAM) tenham registrado avanço, a faixa de 8 GB constitui o principal gargalo físico para a execução de modelos densos de inteligência artificial fora de \textit{data centers}.
 
-Sob a perspectiva da Ciência da Computação e da Engenharia de Software, este trabalho justifica-se pela análise do custo imposto por \textit{frameworks} de alto nível (como Python e PyTorch). Embora adequados para as fases de treinamento e prototipagem, esses ambientes acrescentam camadas entre a aplicação e a GPU --- como o despacho de operações pelo interpretador e as alocações dinâmicas gerenciadas pelo alocador do \textit{framework} ---, cujo efeito sobre a latência e a memória não é conhecido de antemão. Supõe-se que, ao transpor a etapa de inferência do modelo SepConv para um ambiente nativo em C++, integrado à API do ONNX Runtime e a um \textit{kernel} próprio em CUDA, seja possível exercer um controle explícito sobre a alocação de memória na VRAM. Essa suposição é tratada como hipótese e verificada experimentalmente no Capítulo~\ref{cap:resultados}.
+Sob a perspectiva da Ciência da Computação e da Engenharia de Software, este trabalho justifica-se pela análise do custo imposto por \textit{frameworks} de alto nível (como Python e PyTorch). Embora adequados para as fases de treinamento e prototipagem, esses ambientes acrescentam camadas entre a aplicação e a GPU, como o despacho de operações pelo interpretador e as alocações dinâmicas gerenciadas pelo alocador do \textit{framework}, cujo efeito sobre a latência e a memória não é conhecido de antemão. Supõe-se que, ao transpor a etapa de inferência do modelo SepConv para um ambiente nativo em C++, integrado à API do ONNX Runtime e a um \textit{kernel} próprio em CUDA, seja possível exercer um controle explícito sobre a alocação de memória na VRAM. Essa suposição é tratada como hipótese e verificada experimentalmente na Seção~\ref{sec:resultados}.
 
-Em suma, a justificativa do estudo reside na verificação prática de se o gerenciamento granular de hardware, aliado à otimização algorítmica de baixo nível, permite superar limitações físicas de memória, oferecendo um ponto de equilíbrio entre a qualidade visual da interpolação e a eficiência computacional em sistemas comerciais de consumo.
-
-% ---------------------------------------------------------------
-\section{Organização do trabalho}
-\label{sec:organizacao}
-
-O Capítulo~\ref{cap:revisao} apresenta a pesquisa bibliográfica, os fundamentos teóricos e os trabalhos relacionados. O Capítulo~\ref{cap:desenvolvimento} descreve a arquitetura, a exportação do modelo para ONNX e a implementação do motor em C++ e CUDA, em três versões sucessivas. O Capítulo~\ref{cap:metodologia} define o ambiente, o conjunto de avaliação, o procedimento de medição e os critérios de análise. O Capítulo~\ref{cap:resultados} apresenta e discute os resultados frente à hipótese, e o Capítulo~\ref{cap:conclusao} responde à questão de pesquisa e aponta limitações e trabalhos futuros.
+Assim, o estudo verifica na prática se o controle direto da memória da GPU, aliado à otimização de baixo nível, permite contornar o limite físico de memória, oferecendo um ponto de equilíbrio entre a qualidade visual da interpolação e a eficiência computacional em sistemas comerciais de consumo.
 
 % ===============================================================
 % CAPÍTULO 2 - REVISÃO BIBLIOGRÁFICA
@@ -318,7 +352,7 @@ O Capítulo~\ref{cap:revisao} apresenta a pesquisa bibliográfica, os fundamento
 \chapter{Revisão Bibliográfica}
 \label{cap:revisao}
 
-Este capítulo descreve inicialmente o processo de pesquisa bibliográfica. Em seguida, apresenta os fundamentos necessários ao trabalho --- representação de imagens, convolução adaptativa e separável, inferência via ONNX Runtime, arquitetura de GPU e métricas de avaliação --- e, por fim, os trabalhos relacionados que delimitam a contribuição desta pesquisa.
+Este capítulo descreve inicialmente o processo de pesquisa bibliográfica. Em seguida, apresenta os fundamentos necessários ao trabalho (representação de imagens, convolução adaptativa e separável, inferência via ONNX Runtime, arquitetura de GPU e métricas de avaliação) e, por fim, os trabalhos correlatos que delimitam a contribuição desta pesquisa.
 
 % ---------------------------------------------------------------
 \section{Metodologia da pesquisa bibliográfica}
@@ -376,8 +410,10 @@ Foram excluídos da análise trabalhos que apresentassem uma ou mais das seguint
 % Figura do processo de seleção bibliográfica
 % --------------------------------------------------------
 
-\begin{figure}[htb]
+\begin{figure}[H]
 \centering
+\caption{Processo de seleção dos trabalhos utilizados na pesquisa bibliográfica.}
+\label{fig:fluxo_bibliografico}
 
 \begin{tikzpicture}[
 node distance=0.9cm,
@@ -419,18 +455,16 @@ arrow/.style={
 
 \end{tikzpicture}
 
-\caption{Processo de seleção dos trabalhos utilizados na pesquisa bibliográfica.}
-\label{fig:fluxo_bibliografico}
 
 \legend{Fonte: Elaborado pelo autor (2026)}
 \end{figure}
 
 
 
-A estratégia de seleção adotada permitiu reduzir progressivamente o conjunto inicial de publicações, mantendo apenas trabalhos com elevada aderência técnica ao objetivo da pesquisa e representativos do estado da arte em interpolação de quadros de vídeo e otimização de inferência em GPU.
+A estratégia de seleção adotada, resumida na Figura~\ref{fig:fluxo_bibliografico}, permitiu reduzir progressivamente o conjunto inicial de publicações, mantendo apenas trabalhos com elevada aderência técnica ao objetivo da pesquisa e representativos do estado da arte em interpolação de quadros de vídeo e otimização de inferência em GPU.
 
 % ---------------------------------------------------------------
-\section{Fundamentos}
+\section{Fundamentos teóricos}
 \label{sec:fundamentos}
 
 \subsection{Definição de Imagem Digital}
@@ -499,7 +533,7 @@ A Figura~\ref{fig:filtro_adaptativo} mostra os filtros efetivamente estimados pe
 
 \subsection{Fluxo Óptico Explícito vs. Kernels de Movimento Implícito}
 
-Grande parte dos métodos modernos de Interpolação de Quadros de Vídeo (VFI) baseia-se na estimativa de movimento entre quadros consecutivos. Nesse contexto, o conceito de fluxo óptico desempenha papel fundamental ao descrever o deslocamento aparente dos pixels entre duas imagens ao longo do tempo. Formalmente, o fluxo óptico pode ser representado por um campo vetorial denso, no qual cada pixel possui um vetor $(u,v)$ indicando sua direção e magnitude de deslocamento \cite{Szeliski2022}.
+Grande parte dos métodos modernos de Interpolação de Quadros de Vídeo (VFI) baseia-se na estimativa de movimento entre quadros consecutivos. Nesse contexto, o fluxo óptico descreve o deslocamento aparente dos pixels entre duas imagens ao longo do tempo. Formalmente, o fluxo óptico pode ser representado por um campo vetorial denso, no qual cada pixel possui um vetor $(u,v)$ indicando sua direção e magnitude de deslocamento \cite{Szeliski2022}.
 
 Entre os modelos contemporâneos mais relevantes para estimativa de fluxo óptico destaca-se o RAFT (\textit{Recurrent All-Pairs Field Transforms}), proposto por \citeonline{Teed2020}. O modelo constrói volumes de correlação entre todos os pares de pixels das imagens de entrada e utiliza um mecanismo recorrente para refinar iterativamente os vetores de movimento. Essa estratégia permite atingir elevados níveis de precisão, tornando o RAFT uma das principais referências da área de visão computacional. A Figura~\ref{fig:fluxo_optico} mostra o fluxo estimado por esse modelo para a sequência utilizada nas figuras anteriores.
 
@@ -560,7 +594,7 @@ No contexto deste trabalho, essa propriedade é particularmente relevante, pois 
 
 O desenvolvimento de aplicações de processamento de vídeo em alto desempenho exige atenção não apenas aos algoritmos empregados, mas também à forma como os dados são organizados e transferidos entre os diferentes níveis da arquitetura computacional. Nesse contexto, a linguagem C++ é amplamente utilizada em aplicações de visão computacional e computação de alto desempenho por oferecer controle explícito sobre a alocação de memória, estruturas de dados e gerenciamento de recursos do sistema \cite{Kirk2023}.
 
-Em aplicações aceleradas por GPU, os dados normalmente são armazenados inicialmente na memória principal do sistema (Host) e posteriormente transferidos para a memória de vídeo da placa gráfica (Device). Essas transferências ocorrem através do barramento PCI Express (PCIe), cuja largura de banda é significativamente inferior à largura de banda interna da memória da GPU. Consequentemente, movimentações excessivas de dados podem se tornar um gargalo relevante para o desempenho da aplicação \cite{NvidiaCUDA2025}.
+Em aplicações aceleradas por GPU, os dados normalmente são armazenados inicialmente na memória principal do sistema (Host) e posteriormente transferidos para a memória de vídeo da placa gráfica (Device). Essas transferências ocorrem através do barramento PCI Express (PCIe), cuja largura de banda é inferior à largura de banda interna da memória da GPU. Consequentemente, movimentações excessivas de dados podem se tornar um gargalo relevante para o desempenho da aplicação \cite{NvidiaCUDA2025}.
 
 Para minimizar esse problema, é comum organizar os dados em regiões contíguas de memória antes da transferência para o dispositivo gráfico. Essa estratégia melhora a localidade espacial dos acessos, reduz a fragmentação dos dados e favorece operações de leitura e escrita mais eficientes tanto na CPU quanto na GPU \cite{Kirk2023}.
 
@@ -582,14 +616,14 @@ A viabilidade técnica de utilizar kernels de grandes dimensões (como $51 \time
 
 O modelo SepConv resolve esse desafio diretamente em sua arquitetura de rede neural através de uma \textbf{bifurcação na camada de saída}. Em vez de estimar os $N^2$ elementos de uma matriz bidimensional, a rede possui ramificações independentes que inferem, simultaneamente, um vetor vertical $v$ ($N \times 1$) e um vetor horizontal $h$ ($1 \times N$) para cada quadro de entrada.
 
-Ao forçar essa estrutura, o algoritmo garante por construção que o kernel resultante tenha posto 1, sem a necessidade de uma decomposição analítica \textit{a posteriori} --- que, aplicada a um kernel bidimensional arbitrário, seria apenas uma aproximação. Para a implementação em C++, essa característica é fundamental: o sistema recebe da rede neural apenas $2N$ valores por pixel e por quadro, o que reduz a ocupação de memória pelos filtros. A equivalência numérica entre a síntese realizada pelo motor C++ e a da implementação original é verificada experimentalmente na Seção~\ref{sec:equivalencia}.
+Ao forçar essa estrutura, o algoritmo garante por construção que o kernel resultante tenha posto 1, sem a necessidade de uma decomposição analítica \textit{a posteriori}, que seria apenas uma aproximação quando aplicada a um kernel bidimensional arbitrário. Para a implementação em C++, essa característica é determinante: o sistema recebe da rede neural apenas $2N$ valores por pixel e por quadro, o que reduz a ocupação de memória pelos filtros. A equivalência numérica entre a síntese realizada pelo motor C++ e a da implementação original é verificada experimentalmente na Seção~\ref{sec:equivalencia}.
 
 \subsection{Arquitetura de GPU e o Gargalo de Memória (\textit{Memory Wall})}
 \label{sec:memory_wall}
 
-A execução de modelos profundos de visão computacional em hardware de consumo é limitada fundamentalmente pelo tráfego de dados e pela largura de banda de memória. Segundo a teoria arquitetural de \citeonline{Hennessy2022}, os sistemas computacionais modernos enfrentam o fenômeno denominado \textit{Memory Wall} (Muro da Memória), caracterizado pela disparidade entre o crescimento da capacidade de processamento aritmético e o aumento da largura de banda dos barramentos de memória. Como consequência, em aplicações intensivas em dados, o tempo despendido na movimentação de tensores entre a memória principal e as unidades lógicas frequentemente supera o tempo de execução das operações matemáticas \cite{Hennessy2022}.
+A execução de modelos profundos de visão computacional em hardware de consumo é limitada pelo tráfego de dados e pela largura de banda de memória. Segundo a teoria arquitetural de \citeonline{Hennessy2022}, os sistemas computacionais modernos enfrentam o fenômeno denominado \textit{Memory Wall} (Muro da Memória), caracterizado pela disparidade entre o crescimento da capacidade de processamento aritmético e o aumento da largura de banda dos barramentos de memória. Como consequência, em aplicações intensivas em dados, o tempo despendido na movimentação de tensores entre a memória principal e as unidades lógicas frequentemente supera o tempo de execução das operações matemáticas \cite{Hennessy2022}.
 
-Em Unidades de Processamento Gráfico (GPUs), essa restrição exige estratégias rigorosas de alocação e acesso. Conforme aponta \citeonline{Kirk2023}, a vazão máxima de processamento de uma GPU depende de acessos à memória global efetuados de forma contígua e coalescida. Transferências frequentes pelo barramento PCI Express (PCIe) ou realocações dinâmicas de estruturas intermediárias na memória de vídeo (VRAM) introduzem contenção de barramento e paralisam os núcleos de processamento. Esse cenário torna-se crítico em GPUs comerciais limitadas a 8 GB de VRAM, que representam a configuração mais difundida entre usuários de computadores pessoais \cite{SteamSurvey2026}. Nesses ambientes, a redução do \textit{footprint} espacial da inferência --- obtida ao estimar $2N$ coeficientes separáveis por pixel em vez de $N^2$ --- constitui um requisito de engenharia essencial para evitar o esgotamento do limite físico de memória. A Figura~\ref{fig:host_device} resume essa organização e o papel do barramento PCIe entre as duas memórias.
+Em Unidades de Processamento Gráfico (GPUs), essa restrição exige estratégias rigorosas de alocação e acesso. Conforme aponta \citeonline{Kirk2023}, a vazão máxima de processamento de uma GPU depende de acessos à memória global efetuados de forma contígua e coalescida. Transferências frequentes pelo barramento PCI Express (PCIe) ou realocações dinâmicas de estruturas intermediárias na memória de vídeo (VRAM) introduzem contenção de barramento e paralisam os núcleos de processamento. Esse cenário torna-se crítico em GPUs comerciais limitadas a 8 GB de VRAM, que representam a configuração mais difundida entre usuários de computadores pessoais \cite{SteamSurvey2026}. Nesses ambientes, a redução do \textit{footprint} espacial da inferência, obtida ao estimar $2N$ coeficientes separáveis por pixel em vez de $N^2$, é um requisito de engenharia para evitar o esgotamento do limite físico de memória. A Figura~\ref{fig:host_device} resume essa organização e o papel do barramento PCIe entre as duas memórias.
 
 \begin{figure}[H]
     \centering
@@ -625,7 +659,7 @@ A Figura~\ref{fig:simt} ilustra o mapeamento adotado no motor deste trabalho: um
 \subsection{Processamento de Baixo Nível e a Plataforma CUDA}
 \label{sec:plataforma_cuda}
 
-A exploração eficiente do modelo SIMT requer interfaces de programação que permitam o controle direto sobre os Multiprocessadores Fluxáveis (\textit{Streaming Multiprocessors} -- SMs) da GPU. A plataforma de computação paralela CUDA (\textit{Compute Unified Device Architecture}) fornece extensões à linguagem C++ para a construção de \textit{kernels} --- funções executadas paralelamente no dispositivo através de uma hierarquia bidimensional de blocos e \textit{grids} de \textit{threads} \cite{NvidiaCUDA2025}.
+A exploração eficiente do modelo SIMT requer interfaces de programação que permitam o controle direto sobre os Multiprocessadores Fluxáveis (SMs, do inglês \textit{Streaming Multiprocessors}) da GPU. A plataforma de computação paralela CUDA (\textit{Compute Unified Device Architecture}) fornece extensões à linguagem C++ para a construção de \textit{kernels}, funções executadas paralelamente no dispositivo através de uma hierarquia bidimensional de blocos e \textit{grids} de \textit{threads} \cite{NvidiaCUDA2025}.
 
 Um motor de inferência nativo em C++ e CUDA oferece, em princípio, as seguintes possibilidades frente a \textit{frameworks} de alto nível (como PyTorch), que introduzem camadas de abstração e alocações dinâmicas na memória gráfica:
 
@@ -643,7 +677,7 @@ A validação de algoritmos de Interpolação de Quadros de Vídeo (VFI) exige a
 
 \textbf{1. Peak Signal-to-Noise Ratio (PSNR):}
 
-O PSNR é uma das métricas mais tradicionais para avaliação da qualidade de imagens reconstruídas ou comprimidas. Sua formulação é baseada no Erro Quadrático Médio (\textit{Mean Squared Error} -- MSE), que mede a diferença pixel a pixel entre a imagem sintetizada e a imagem de referência \cite{Hore2010}.
+O PSNR é uma das métricas mais tradicionais para avaliação da qualidade de imagens reconstruídas ou comprimidas. Sua formulação é baseada no Erro Quadrático Médio (MSE, do inglês \textit{Mean Squared Error}), que mede a diferença pixel a pixel entre a imagem sintetizada e a imagem de referência \cite{Hore2010}.
 
 Matematicamente, o PSNR é definido como:
 
@@ -714,7 +748,7 @@ Por sua vez, o consumo de memória constitui um fator limitante para a execuçã
 
 No contexto da interpolação de quadros baseada em convoluções adaptativas separáveis, a redução da complexidade espacial representa um dos principais fatores que podem contribuir para a diminuição do consumo de memória e para a melhoria da eficiência geral do sistema. Dessa forma, a análise conjunta de métricas de qualidade visual e desempenho computacional permite uma avaliação mais abrangente dos benefícios e limitações da abordagem investigada neste trabalho.
 % ---------------------------------------------------------------
-\section{Trabalhos relacionados}
+\section{Trabalhos correlatos}
 \label{sec:trabalhos_relacionados}
 
 Nesta seção, são apresentados três trabalhos recentes que abordam o desafio da Interpolação de Quadros de Vídeo (VFI). A seleção prioriza métodos que, assim como esta pesquisa, buscam o equilíbrio entre a fidelidade visual e a eficiência no processamento de grandes deslocamentos de pixels.
@@ -736,11 +770,11 @@ Entretanto, a arquitetura proposta prioriza a qualidade visual e a robustez da r
 
 \subsection{Trabalho 3: RAFT: Recurrent All-Pairs Field Transforms for Optical Flow}
 
-\citeonline{Teed2020} abordaram a precisão na estimativa de movimento, um problema seminal para a síntese de novos quadros. Para resolvê-lo, propuseram o modelo RAFT, que utiliza uma arquitetura recorrente para atualizar campos de fluxo óptico através de volumes de correlação de todos os pares de pixels. A metodologia utiliza iterações sucessivas para refinar o movimento detectado. Os resultados estabeleceram um novo estado da arte em termos de precisão de vetores. No entanto, a solução apresenta alta latência e exige GPUs de alto desempenho, limitando severamente a viabilidade em cenários comuns. O presente trabalho diferencia-se por adotar a convolução adaptativa como uma alternativa mais contida ao fluxo óptico denso do RAFT, priorizando a performance em GPU e a otimização do consumo de VRAM através de uma inferência nativa.
+\citeonline{Teed2020} abordaram a precisão na estimativa de movimento, um problema seminal para a síntese de novos quadros. Para resolvê-lo, propuseram o modelo RAFT, que utiliza uma arquitetura recorrente para atualizar campos de fluxo óptico através de volumes de correlação de todos os pares de pixels. A metodologia utiliza iterações sucessivas para refinar o movimento detectado. Os resultados estabeleceram um novo estado da arte em termos de precisão de vetores. No entanto, a solução apresenta alta latência e exige GPUs de alto desempenho, limitando severamente a viabilidade em cenários comuns. O presente trabalho diferencia-se por adotar a convolução adaptativa como uma alternativa mais contida ao fluxo óptico denso do RAFT, priorizando a performance em GPU e a otimização do consumo de VRAM através de uma inferência nativa. A Tabela~\ref{tab:trabalhos_relacionados} resume a comparação entre esses trabalhos e a abordagem deste estudo.
 
 \vspace{0.5cm}
 
-\begin{table}[htb]
+\begin{table}[H]
     \centering
     \caption{Comparação entre trabalhos relacionados e a abordagem proposta}
     \label{tab:trabalhos_relacionados}
@@ -767,20 +801,100 @@ Entretanto, a arquitetura proposta prioriza a qualidade visual e a robustez da r
 \chapter{Desenvolvimento}
 \label{cap:desenvolvimento}
 
-Neste capítulo, apresenta-se a solução desenvolvida para o problema identificado: o modelo utilizado, a arquitetura do motor de inferência, o processo de exportação e desacoplamento do modelo via ONNX Runtime e a implementação do motor em C++ e CUDA, incluindo a verificação de sua equivalência com a implementação original. O ambiente, o protocolo e os critérios de avaliação são descritos no Capítulo~\ref{cap:metodologia}.
+Este capítulo apresenta o método da pesquisa, a implementação do motor de inferência, o cenário de testes e os resultados obtidos, analisados frente à hipótese.
 
 % ---------------------------------------------------------------
-\section{Solução Proposta e Arquitetura}
+\section{Metodologia da pesquisa}
+\label{sec:metodo}
+
+Esta seção descreve o delineamento dos experimentos, as condições comparadas, o ambiente, as métricas e os critérios de decisão sobre a hipótese. O mesmo protocolo é aplicado a todas as condições, de modo que as diferenças observadas possam ser atribuídas à forma de execução e não a diferenças de metodologia.
+
+\subsection{Delineamento e condições experimentais}
+\label{sec:condicoes}
+
+Trata-se de um estudo experimental comparativo. As variáveis independentes são a \textbf{implementação} e a \textbf{resolução} do vídeo; as variáveis dependentes são a latência por quadro, a taxa de quadros por segundo, o pico de VRAM e a fidelidade visual (PSNR, SSIM e VMAF). Foram definidas seis condições:
+
+\begin{enumerate}
+    \item \textbf{\textit{Baseline} Python/PyTorch}: o código original de \citeonline{Niklaus2021} (Seção~\ref{sec:modelo_utilizado}), em que a rede é executada pelo PyTorch e a síntese por um \textit{kernel} CUDA compilado em tempo de execução. Um \textit{script} de medição invoca o código original sem alterar o seu comportamento e registra o tempo por quadro e a VRAM com os mesmos critérios do motor C++;
+    \item \textbf{Motor C++/CUDA}: o motor descrito na Seção~\ref{sec:implementacao_motor}, com a rede executada pelo ONNX Runtime e a síntese pelo \textit{kernel} próprio;
+    \item \textbf{Controle ONNX Runtime}: a rede executada pelo ONNX Runtime, mas sem o \textit{kernel} próprio de síntese, para separar o efeito da troca do mecanismo de inferência do efeito do \textit{kernel} de convolução. Esta condição foi definida no protocolo, mas não foi executada, o que é tratado como limitação (Seção~\ref{sec:limitacoes});
+    \item \textbf{Motor C++/CUDA em blocos}: a segunda versão do motor (Seção~\ref{sec:tiling}), com blocos de 256, 512 e 1024 pixels e margem de 96 pixels;
+    \item \textbf{Motor C++/CUDA com o alocador ajustado e em meia precisão}: a terceira versão do motor (Seção~\ref{sec:fp16}), em FP16 com o quadro inteiro e com blocos de 1024 e 512 pixels, e em FP32 com o quadro inteiro, para separar o efeito do alocador do efeito da precisão;
+    \item \textbf{\textit{Baseline} em meia precisão}: o mesmo código original da condição 1, com a execução envolvida pelo \texttt{torch.autocast}, o mecanismo de precisão mista do PyTorch. O código não é alterado: a rede calcula em FP16, e a função de síntese, que já declara suporte a esse mecanismo, converte os filtros para FP32 antes da convolução.
+\end{enumerate}
+
+Como as condições 1 e 2 utilizam o mesmo modelo e os mesmos filtros separáveis, a comparação entre elas isola o efeito da forma de execução (linguagem, mecanismo de inferência e gerenciamento de memória), e não o efeito da separabilidade em si, que está presente nas duas. Na condição 5 em FP16, muda também a precisão numérica; a comparação com a condição 1 mede, nesse caso, o efeito conjunto da forma de execução e da precisão, e a condição 6 permite separar os dois efeitos (Seção~\ref{sec:res_python_fp16}).
+
+\subsection{Ambiente Experimental}
+\label{sec:ambiente}
+
+Todos os experimentos foram executados em um computador pessoal com configuração representativa do perfil de hardware de consumo discutido na Seção~\ref{sec:justificativa}. A Tabela~\ref{tab:ambiente} descreve o hardware e as versões de software utilizadas, informação necessária para a reprodutibilidade dos resultados.
+
+\begin{table}[H]
+\centering
+\caption{Hardware e software do ambiente experimental}
+\label{tab:ambiente}
+\begin{tabularx}{\textwidth}{@{}p{5.0cm}Y@{}}
+\toprule
+\textbf{Componente} & \textbf{Especificação} \\
+\midrule
+GPU & NVIDIA GeForce RTX 4060 Ti, 8 GB de VRAM (arquitetura Ada Lovelace, \textit{compute capability} 8.9) \\
+CPU & Intel Core i5-12400F \\
+Memória principal & 16 GB \\
+Sistema operacional & Windows 11 Home (\textit{driver} NVIDIA 610.47 na primeira bateria e 610.88 nas demais) \\
+Motor C++ & C++17, CUDA Toolkit 13.3, MSVC (Visual Studio 2022), CMake 4.4 \\
+Inferência & ONNX Runtime 1.23.2 (GPU) com \textit{CUDA Execution Provider}; conversão para FP16 com \textit{onnxconverter-common} 1.16 \\
+Entrada e saída de vídeo & OpenCV 4.13 (API C++ e Python) \\
+\textit{Baseline} & Python 3.10, PyTorch 2.11 (CUDA 12.8), implementação original de \citeonline{Niklaus2021} \\
+Métricas & scikit-image 0.25 (PSNR e SSIM), FFmpeg 9.0 com \textit{libvmaf} (VMAF) \\
+\bottomrule
+\end{tabularx}
+\legend{Fonte: Elaborado pelo autor (2026)}
+\end{table}
+
+Os \textit{clocks} da GPU não foram fixados: a placa operou com o gerenciamento de energia padrão do \textit{driver}. As condições da GPU no início da bateria (ocupação de memória, temperatura e \textit{clock}) foram registradas junto com os resultados, e o efeito da variação de \textit{clock} é mitigado pelo aquecimento e pelas medições repetidas descritos na Seção~\ref{sec:procedimento}.
+
+\subsection{Métricas}
+\label{sec:metricas}
+
+\begin{itemize}
+    \item \textbf{Latência}: tempo médio para sintetizar um quadro, incluindo a transferência dos quadros para a GPU, a inferência, a convolução e o retorno do resultado ao Host, acompanhado do desvio padrão entre as medições. No motor C++, o tempo também é decomposto por estágio (Seção~\ref{sec:instrumentacao}); na \textit{baseline}, nesta bateria, registrou-se apenas o tempo total;
+    \item \textbf{Taxa de quadros (FPS)}: quadros sintetizados por segundo, obtida como o inverso da latência média;
+    \item \textbf{Consumo de VRAM}: como o \textit{driver} do Windows não informa à NVML o consumo por processo, registra-se a ocupação total da GPU antes da inicialização da implementação (linha de base) e o pico observado durante a execução; o consumo atribuído à implementação é a diferença entre ambos. Nas duas primeiras baterias, a ocupação foi lida após cada interpolação; a partir da terceira, a cada milissegundo, por uma \textit{thread} separada, o que se mostrou necessário para o estudo do alocador (Seção~\ref{sec:fp16}) e não alterou os picos das condições anteriores em mais de 0,5\%. Para que a linha de base seja estável, nenhuma outra aplicação de uso intenso da GPU é executada durante as medições. No Windows, quando a VRAM se esgota, o \textit{driver} passa a utilizar a memória principal do sistema (\textit{Sysmem Fallback}) em vez de interromper a execução, o que eleva drasticamente a latência. Como a NVML não contabiliza essa memória, as execuções em que a VRAM foi saturada são sinalizadas: no motor C++, quando a ocupação atinge 97\% da capacidade; na \textit{baseline}, também quando a memória reservada pelo PyTorch excede a VRAM livre no início da execução;
+    \item \textbf{Fidelidade visual}: PSNR, SSIM e VMAF calculados exclusivamente sobre os quadros sintetizados. Incluir os quadros pares, que são cópias dos originais, elevaria artificialmente os resultados. Pelo mesmo motivo, as tarjas pretas horizontais presentes no trailer (\textit{letterbox}, 20\% da altura do quadro), reconstruídas sem erro por qualquer método, são excluídas da área avaliada. O VMAF é calculado pelo filtro \textit{libvmaf} do FFmpeg \cite{NetflixVMAFRepo} com o modelo padrão \texttt{vmaf\_v0.6.1}; como verificação, a comparação do vídeo de referência com ele mesmo resultou em 99,91, valor esperado para sequências idênticas.
+\end{itemize}
+
+\subsection{Critérios de decisão e análise estatística}
+\label{sec:criterios}
+
+A hipótese é avaliada pelos três critérios da Seção~\ref{sec:hipotese}, em cada resolução:
+
+\begin{itemize}
+    \item \textbf{H1 (latência)}: as 27 medições de tempo de cada implementação são comparadas pelo teste $t$ de Welch unilateral, que não pressupõe variâncias iguais, ao nível de significância $\alpha = 0{,}05$. O critério é atendido se a diferença for significativa e a redução média for de pelo menos 10\%, limiar adotado para que a diferença seja relevante na prática, e não apenas estatisticamente detectável;
+    \item \textbf{H2 (VRAM)}: o pico de VRAM é uma medida única por execução, de modo que não se aplica teste estatístico. O critério é atendido se o pico do motor for no máximo 90\% do pico da \textit{baseline} e se a execução não tiver saturado a VRAM;
+    \item \textbf{H3 (fidelidade)}: as métricas são comparadas quadro a quadro entre as implementações, sobre os mesmos quadros sintetizados. O critério é atendido se a diferença média não exceder 0,1 dB de PSNR, 0,001 de SSIM e 0,5 ponto de VMAF, limites inferiores à variação observada entre quadros de uma mesma execução.
+\end{itemize}
+
+Os limiares numéricos foram fixados durante a revisão do texto, após a primeira bateria de testes. Para não ajustar os critérios aos resultados, os mesmos limiares são mantidos para as baterias seguintes e os resultados são relatados mesmo quando contrários à hipótese.
+
+% ---------------------------------------------------------------
+\section{Detalhes da implementação}
+\label{sec:detalhes_implementacao}
+
+Esta seção apresenta a solução desenvolvida: o modelo utilizado, a arquitetura do motor de inferência, a exportação do modelo para ONNX e a implementação em C++ e CUDA, incluindo a verificação de sua equivalência com a implementação original e as duas versões seguintes do motor.
+
+% ---------------------------------------------------------------
+\subsection{Solução Proposta e Arquitetura}
 \label{sec:solucao}
 
 A solução proposta para investigar a viabilidade técnica e a eficiência das convoluções adaptativas separáveis consiste no desenvolvimento de um motor de inferência customizado para Interpolação de Quadros de Vídeo (VFI). O foco é transpor a etapa de inferência do modelo SepConv para um ambiente otimizado em GPU.
 
-\subsection{Modelo utilizado}
+\subsubsection{Modelo utilizado}
 \label{sec:modelo_utilizado}
 
 Os fundamentos da Seção~\ref{sec:fundamentos} descrevem o SepConv original de \citeonline{Niklaus2017}. Os experimentos deste trabalho, porém, utilizam a variante revisada \textbf{SepConv++} de \citeonline{Niklaus2021}, que mantém a formulação de filtros separáveis e introduz melhorias na arquitetura e no treinamento da rede. Foram utilizados o código de referência e os pesos pré-treinados distribuídos pelos autores, com o \textit{checkpoint} \texttt{network-paper.pytorch} (a versão avaliada no artigo) e filtros de $N = 51$ coeficientes. O código e os pesos são distribuídos sob a \textit{Adobe Research License}, que permite o uso, a modificação e a redistribuição exclusivamente para fins de pesquisa não comercial, condição atendida por este trabalho. O código original foi mantido sem alterações de comportamento e serve como \textit{baseline} dos experimentos.
 
-\subsection{Fluxo de dados}
+\subsubsection{Fluxo de dados}
 
 O sistema opera em um fluxo de dados (\textit{pipeline}) composto por cinco estágios sequenciais:
 
@@ -826,7 +940,7 @@ seta/.style={thick, -{Latex[length=3mm]}}
 \end{figure}
 
 % ---------------------------------------------------------------
-\section{Exportação do Modelo e Grafo ONNX}
+\subsection{Exportação do Modelo e Grafo ONNX}
 \label{sec:exportacao_onnx}
 
 Para desacoplar a inferência do ambiente de treinamento em Python/PyTorch, a rede de estimativa de filtros foi exportada para o formato \textit{Open Neural Network Exchange} (ONNX). O modelo em formato \texttt{.onnx} recebe dois quadros de entrada e gera como saída os quatro tensores dos filtros unidimensionais ($v_1, h_1, v_2, h_2$); a síntese do quadro, que no código original é executada por um \textit{kernel} CUDA à parte, não faz parte do grafo.
@@ -849,9 +963,9 @@ A estrutura do grafo exportado pode ser observada nas Figuras~\ref{fig:onnx_top}
     \legend{Fonte: Elaborado pelo autor (2026)}
 \end{figure}
 
-\subsection{Correção do grafo para resoluções arbitrárias}
+\subsubsection{Correção do grafo para resoluções arbitrárias}
 
-A primeira exportação do modelo funcionava apenas na resolução utilizada durante o processo de exportação (1920 $\times$ 1080). Em qualquer outra resolução --- como 448 $\times$ 256 ou 1280 $\times$ 720 ---, a execução era interrompida por incompatibilidade de dimensões em uma operação de soma do decodificador.
+A primeira exportação do modelo funcionava apenas na resolução utilizada durante o processo de exportação (1920 $\times$ 1080). Em qualquer outra resolução, como 448 $\times$ 256 ou 1280 $\times$ 720, a execução era interrompida por incompatibilidade de dimensões em uma operação de soma do decodificador.
 
 A investigação mostrou que o decodificador original recorta a saída de cada etapa de \textit{upsampling} por meio de uma condição em Python que compara as dimensões dos tensores. Durante a exportação, essa condição é avaliada uma única vez e o recorte resultante é fixado no grafo ONNX, que passa a refletir apenas a sequência de dimensões pares e ímpares da resolução de exportação. A correção consistiu em substituir a condição por um fatiamento (\textit{slicing}) até as dimensões do nível correspondente da rede, operação matematicamente equivalente à original e válida para qualquer resolução de entrada com dimensões pares.
 
@@ -876,16 +990,16 @@ Para verificar a equivalência, as saídas do modelo ONNX (executado pelo ONNX R
 \end{table}
 
 % ---------------------------------------------------------------
-\section{Implementação do Motor de Inferência}
+\subsection{Implementação do Motor de Inferência}
 \label{sec:implementacao_motor}
 
 O motor foi implementado como um executável em C++17 que reúne os seis estágios da Figura~\ref{fig:pipeline}. Todos os \textit{buffers} na VRAM são alocados uma única vez, de acordo com a resolução do vídeo, e reutilizados em todas as interpolações, evitando alocações dinâmicas durante o processamento. O executável opera em dois modos: interpolação de um par de imagens, repetida para fins de medição, e interpolação de vídeos completos com fator $2\times$ ou $4\times$. No fator $4\times$, adota-se o mesmo esquema recursivo da implementação original: o quadro $t+0{,}5$ é sintetizado a partir dos quadros originais e os quadros $t+0{,}25$ e $t+0{,}75$, a partir dele e de cada quadro original vizinho. Os experimentos deste trabalho utilizam apenas o fator $2\times$.
 
-\subsection{Integração com o ONNX Runtime}
+\subsubsection{Integração com o ONNX Runtime}
 
 O modelo é carregado pela API C++ do ONNX Runtime com o \textit{CUDA Execution Provider}. Para que os tensores não transitem pela memória principal, utiliza-se o mecanismo de \textit{I/O binding}: as duas entradas e as quatro saídas do grafo são associadas diretamente a ponteiros previamente alocados pelo motor na VRAM com \texttt{cudaMalloc}. Assim, os quadros pré-processados são lidos pela rede sem cópias adicionais, e os filtros estimados ficam disponíveis na VRAM para o \textit{kernel} de convolução.
 
-\subsection{\textit{Kernel} de convolução separável}
+\subsubsection{\textit{Kernel} de convolução separável}
 \label{sec:kernel_sepconv}
 
 O \textit{kernel} CUDA de síntese atribui uma \textit{thread} a cada pixel $(x, y)$ do quadro intermediário. Sendo $I_1$ e $I_2$ os quadros de entrada e $v_k$, $h_k$ os filtros vertical e horizontal de $N = 51$ coeficientes estimados para o quadro $k$, cada canal do pixel sintetizado é calculado por:
@@ -901,21 +1015,21 @@ Duas decisões de implementação diferem da versão original em PyTorch. Primei
 
 Cabe uma observação sobre a complexidade discutida na Seção~\ref{sec:conv_separavel}. Como cada pixel possui o seu próprio par de filtros, não é possível decompor a síntese em duas passadas unidimensionais compartilhadas entre pixels vizinhos, como ocorre em uma convolução separável convencional: o laço da Equação~\ref{eq:sepconv} ainda realiza $N^2$ multiplicações por pixel. O ganho da separabilidade, neste contexto, está na quantidade de coeficientes que a rede precisa estimar e manter na memória: $2N = 102$ valores por pixel e por quadro, em vez de $N^2 = 2.601$. Em resolução Full HD, os quatro tensores de filtros em ponto flutuante de 32 bits ocupam cerca de 1,6 GB; filtros bidimensionais completos exigiriam aproximadamente 40 GB, inviáveis em qualquer GPU de consumo.
 
-\subsection{Instrumentação}
+\subsubsection{Instrumentação}
 \label{sec:instrumentacao}
 
-O motor mede o tempo de cada estágio com eventos CUDA (\texttt{cudaEventRecord}) e, para a inferência --- executada pelo ONNX Runtime em seu próprio \textit{stream} e de forma síncrona ---, com o relógio monotônico do Host. O consumo de VRAM é obtido pela biblioteca NVML, conforme o procedimento descrito na Seção~\ref{sec:metricas}. Os resultados de cada execução são acrescentados a um arquivo CSV, a partir do qual são gerados os gráficos e tabelas deste trabalho.
+O motor mede o tempo de cada estágio com eventos CUDA (\texttt{cudaEventRecord}) e, para a inferência, executada pelo ONNX Runtime em seu próprio \textit{stream} e de forma síncrona, com o relógio monotônico do Host. O consumo de VRAM é obtido pela biblioteca NVML, conforme o procedimento descrito na Seção~\ref{sec:metricas}. Os resultados de cada execução são acrescentados a um arquivo CSV, a partir do qual são gerados os gráficos e tabelas deste trabalho.
 
-\subsection{Equivalência com a implementação original}
+\subsubsection{Equivalência com a implementação original}
 \label{sec:equivalencia}
 
-Antes das medições de desempenho, verificou-se se o motor produz o mesmo resultado da implementação original. Para o par de quadros de exemplo distribuído com o código de \citeonline{Niklaus2021} (584 $\times$ 388 pixels), o quadro sintetizado pelo motor C++ apresentou PSNR de 93,67 dB e SSIM de 1,000000 em relação ao quadro gerado pela implementação em PyTorch: apenas 0,003\% dos valores diferem, e sempre por um único nível de intensidade, efeito do arredondamento de ponto flutuante. Os dois motores são, portanto, equivalentes do ponto de vista da qualidade visual, e as diferenças de desempenho medidas no Capítulo~\ref{cap:resultados} decorrem da forma de execução, e não do resultado calculado.
+Antes das medições de desempenho, verificou-se se o motor produz o mesmo resultado da implementação original. Para o par de quadros de exemplo distribuído com o código de \citeonline{Niklaus2021} (584 $\times$ 388 pixels), o quadro sintetizado pelo motor C++ apresentou PSNR de 93,67 dB e SSIM de 1,000000 em relação ao quadro gerado pela implementação em PyTorch: apenas 0,003\% dos valores diferem, e sempre por um único nível de intensidade, efeito do arredondamento de ponto flutuante. Os dois motores são, portanto, equivalentes do ponto de vista da qualidade visual, e as diferenças de desempenho medidas na Seção~\ref{sec:resultados} decorrem da forma de execução, e não do resultado calculado.
 
 % ---------------------------------------------------------------
-\section{Processamento em blocos (segunda versão do motor)}
+\subsection{Processamento em blocos (segunda versão do motor)}
 \label{sec:tiling}
 
-Os resultados da primeira versão (Capítulo~\ref{cap:resultados}) mostraram que processar o quadro inteiro de uma só vez esgota a VRAM a partir de 1440p: em 2160p, apenas os quatro tensores de filtros ocupariam cerca de 6,8 GB. Para que o pico de memória deixe de crescer com a resolução, foi implementada uma segunda versão do motor, na qual o quadro é dividido em blocos de $T \times T$ pixels processados um de cada vez. A Figura~\ref{fig:tiling} ilustra a estratégia.
+Os resultados da primeira versão (Seção~\ref{sec:resultados}) mostraram que processar o quadro inteiro de uma só vez esgota a VRAM a partir de 1440p: em 2160p, apenas os quatro tensores de filtros ocupariam cerca de 6,8 GB. Para que o pico de memória deixe de crescer com a resolução, foi implementada uma segunda versão do motor, na qual o quadro é dividido em blocos de $T \times T$ pixels processados um de cada vez. A Figura~\ref{fig:tiling} ilustra a estratégia.
 
 \begin{figure}[H]
 \centering
@@ -955,7 +1069,7 @@ Três cuidados garantem que o resultado em blocos seja equivalente ao do quadro 
 
 Em cada bloco, a inferência é seguida imediatamente pela convolução do miolo, que escreve diretamente no quadro de saída. Assim, os tensores de filtros e as ativações da rede passam a ter o tamanho de um bloco com margem, e não o do quadro inteiro; apenas os dois quadros de entrada (cerca de 200 MB em 2160p) e o quadro de saída permanecem inteiros na VRAM. O \textit{kernel} de convolução da Seção~\ref{sec:kernel_sepconv} foi generalizado para operar sobre uma região do quadro, lendo os filtros na posição correspondente dentro do recorte. Com $T = 0$, o motor mantém o comportamento da primeira versão.
 
-\subsection{Escolha da margem}
+\subsubsection{Escolha da margem}
 
 A margem foi definida experimentalmente. Uma reimplementação em PyTorch do processamento em blocos, que reproduz exatamente a saída da implementação original no quadro inteiro, foi executada em três pares de quadros em 1080p para blocos de 256 e 512 pixels e margens de 0 a 160 pixels. A Tabela~\ref{tab:margem} compara cada configuração com o quadro inteiro.
 
@@ -963,7 +1077,8 @@ A margem foi definida experimentalmente. Uma reimplementação em PyTorch do pro
 \centering
 \caption{Diferença entre o processamento em blocos e o do quadro inteiro, em 1080p}
 \label{tab:margem}
-\small
+\footnotesize
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{rrrrrrr}
 \toprule
 \textbf{Bloco} & \textbf{Margem} & \textbf{PSNR (dB)} & \textbf{Dif. máx.} & \textbf{Pixels dif. (\%)} & \textbf{Ativações (MiB)} & \textbf{ms/quadro} \\
@@ -988,17 +1103,17 @@ A margem foi definida experimentalmente. Uma reimplementação em PyTorch do pro
 \legend{Dif. máx.: maior diferença entre os quadros de 8 bits, em níveis de intensidade. Ativações: pico de memória alocada pelo PyTorch, sem os \textit{buffers} fixos do motor. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
-Sem margem, os blocos produzem erros de até 98 níveis de intensidade nas suas bordas. A partir de 96 pixels, a maior diferença em relação ao quadro inteiro passa a ser de um único nível, em menos de 0,002\% dos pixels --- a mesma ordem do arredondamento observado entre o motor C++ e a implementação original (Seção~\ref{sec:equivalencia}). Por isso, adotou-se $M = 96$. A tabela também evidencia o compromisso central da estratégia: blocos menores reduzem o pico de memória, mas aumentam o tempo, pois a margem de cada bloco é processada repetidas vezes. Com blocos de 512 pixels e margem de 96, o pico de ativações caiu 52\% e o tempo aumentou 49\% em relação ao quadro inteiro.
+Sem margem, os blocos produzem erros de até 98 níveis de intensidade nas suas bordas. A partir de 96 pixels, a maior diferença em relação ao quadro inteiro passa a ser de um único nível, em menos de 0,002\% dos pixels, a mesma ordem do arredondamento observado entre o motor C++ e a implementação original (Seção~\ref{sec:equivalencia}). Por isso, adotou-se $M = 96$. A tabela também evidencia o compromisso central da estratégia: blocos menores reduzem o pico de memória, mas aumentam o tempo, pois a margem de cada bloco é processada repetidas vezes. Com blocos de 512 pixels e margem de 96, o pico de ativações caiu 52\% e o tempo aumentou 49\% em relação ao quadro inteiro.
 
-No motor C++, a saída em blocos ($T = 512$ e $T = 256$, $M = 96$) diferiu da saída do quadro inteiro em no máximo um nível de intensidade, em 0,02\% dos pixels. A avaliação de desempenho desta segunda versão segue o mesmo protocolo da primeira (Capítulo~\ref{cap:metodologia}) e é apresentada na Seção~\ref{sec:res_blocos}.
+No motor C++, a saída em blocos ($T = 512$ e $T = 256$, $M = 96$) diferiu da saída do quadro inteiro em no máximo um nível de intensidade, em 0,02\% dos pixels. A avaliação de desempenho desta segunda versão segue o mesmo protocolo da primeira (Seção~\ref{sec:experimentos}) e é apresentada na Seção~\ref{sec:res_blocos}.
 
 % ---------------------------------------------------------------
-\section{Alocador de memória e meia precisão (terceira versão do motor)}
+\subsection{Alocador de memória e meia precisão (terceira versão do motor)}
 \label{sec:fp16}
 
 As duas primeiras versões deixaram duas fontes de consumo de memória sem tratamento: a gestão de memória do ONNX Runtime, apontada como causa provável do maior consumo da primeira versão (Seção~\ref{sec:res_vram}), e a precisão numérica, já que todos os tensores eram mantidos em ponto flutuante de 32 bits (FP32). A terceira versão do motor atua sobre as duas sem alterar a estratégia de processamento, e pode ser usada tanto com o quadro inteiro quanto em blocos.
 
-\subsection{Configuração do alocador do ONNX Runtime}
+\subsubsection{Configuração do alocador do ONNX Runtime}
 
 Para avaliar as opções do alocador, a medição de VRAM precisou ser alterada. Até a segunda versão, a NVML era consultada após cada interpolação, o que basta enquanto a memória reservada permanece reservada; quando o ONNX Runtime devolve memória ao fim de cada execução, porém, o pico ocorre durante a execução e não seria registrado. Passou-se então a consultar a NVML a cada milissegundo, em uma \textit{thread} separada, durante toda a execução, tanto no motor quanto na \textit{baseline}. Repetidas com essa medição, as condições das duas primeiras baterias apresentaram picos até 0,5\% diferentes dos originais, de modo que os resultados anteriores permanecem válidos.
 
@@ -1031,232 +1146,48 @@ Todas as opções, exceto potências de dois & 341,0 & 4.743 & 742,2 & 1.291 \\
 
 Adotou-se a combinação sem padrão de memória e com a \textit{arena} em potências de dois, a de menor memória sem custo de tempo nos blocos; no quadro inteiro, ela consome 3\% a mais que a desativação isolada do padrão de memória. Nas resoluções mais altas, o efeito foi maior: com blocos de 1024 pixels, o pico caiu de 5.805 MiB para 3.501 MiB em 1440p e, em 2160p, de 7.247 MiB, com a VRAM saturada, para 4.655 MiB, sem saturação. O quadro inteiro em 1440p continuou saturando a VRAM em todas as configurações, pois apenas os tensores de filtros ocupam cerca de 3 GB. Em todos os casos, a saída diferiu da configuração anterior em no máximo um nível de intensidade, a mesma diferença observada entre duas execuções idênticas, decorrente da escolha de algoritmos do cuDNN.
 
-\subsection{Inferência em meia precisão (FP16)}
+\subsubsection{Inferência em meia precisão (FP16)}
 
-Os dois modelos ONNX (quadro inteiro e blocos) foram convertidos para meia precisão (FP16) com a biblioteca \textit{onnxconverter-common}, o que reduz o arquivo de cada modelo de 54 MB para 26 MB. Os pesos e os tensores intermediários passam a FP16, mas as entradas permanecem em FP32, de modo que o pré-processamento do motor não muda. As saídas --- os quatro tensores de filtros --- também passam a FP16, o que reduz à metade a memória dos filtros (de 1,6 GB para 0,8 GB em 1080p), e não apenas a das ativações. No modelo do quadro inteiro, as operações que calculam a média e o desvio padrão dos quadros foram mantidas em FP32, porque a soma de milhões de valores em FP16 perderia precisão.
+Os dois modelos ONNX (quadro inteiro e blocos) foram convertidos para meia precisão (FP16) com a biblioteca \textit{onnxconverter-common}, o que reduz o arquivo de cada modelo de 54 MB para 26 MB. Os pesos e os tensores intermediários passam a FP16, mas as entradas permanecem em FP32, de modo que o pré-processamento do motor não muda. Os quatro tensores de filtros, que são as saídas, também passam a FP16, o que reduz à metade a memória dos filtros (de 1,6 GB para 0,8 GB em 1080p), e não apenas a das ativações. No modelo do quadro inteiro, as operações que calculam a média e o desvio padrão dos quadros foram mantidas em FP32, porque a soma de milhões de valores em FP16 perderia precisão.
 
-O \textit{kernel} de convolução separável (Seção~\ref{sec:kernel_sepconv}) passou a aceitar filtros em FP16: cada coeficiente é convertido para FP32 na leitura, e a acumulação continua em FP32. O motor identifica a precisão pelo tipo da saída do modelo. Em três pares de quadros em 1080p, os filtros em FP16 diferiram dos em FP32 em no máximo 1,5\% do maior valor, e o quadro sintetizado diferiu em no máximo um nível de intensidade, em cerca de 0,13\% dos pixels --- diferença da mesma ordem do arredondamento já observado entre o motor e a implementação original (Seção~\ref{sec:equivalencia}). A avaliação de desempenho desta versão é apresentada na Seção~\ref{sec:res_fp16}.
-
-% ===============================================================
-% CAPÍTULO 4 - METODOLOGIA
-% ===============================================================
-\chapter{Metodologia}
-\label{cap:metodologia}
-
-Este capítulo descreve o delineamento dos experimentos: as condições comparadas, o ambiente, o conjunto de avaliação, o procedimento de medição, as métricas, os critérios de decisão sobre a hipótese e os riscos identificados. O mesmo protocolo é aplicado a todas as condições, de modo que as diferenças observadas possam ser atribuídas à forma de execução e não a diferenças de metodologia.
+O \textit{kernel} de convolução separável (Seção~\ref{sec:kernel_sepconv}) passou a aceitar filtros em FP16: cada coeficiente é convertido para FP32 na leitura, e a acumulação continua em FP32. O motor identifica a precisão pelo tipo da saída do modelo. Em três pares de quadros em 1080p, os filtros em FP16 diferiram dos em FP32 em no máximo 1,5\% do maior valor, e o quadro sintetizado diferiu em no máximo um nível de intensidade, em cerca de 0,13\% dos pixels, diferença da mesma ordem do arredondamento já observado entre o motor e a implementação original (Seção~\ref{sec:equivalencia}). A avaliação de desempenho desta versão é apresentada na Seção~\ref{sec:res_fp16}.
 
 % ---------------------------------------------------------------
-\section{Delineamento e condições experimentais}
-\label{sec:condicoes}
+\section{Experimentos e cenário de testes}
+\label{sec:experimentos}
 
-Trata-se de um estudo experimental comparativo. As variáveis independentes são a \textbf{implementação} e a \textbf{resolução} do vídeo; as variáveis dependentes são a latência por quadro, a taxa de quadros por segundo, o pico de VRAM e a fidelidade visual (PSNR, SSIM e VMAF). Foram definidas seis condições:
+Esta seção descreve os dados usados nos testes e o procedimento seguido em cada bateria.
 
-\begin{enumerate}
-    \item \textbf{\textit{Baseline} Python/PyTorch}: o código original de \citeonline{Niklaus2021} (Seção~\ref{sec:modelo_utilizado}), em que a rede é executada pelo PyTorch e a síntese por um \textit{kernel} CUDA compilado em tempo de execução. Um \textit{script} de medição invoca o código original sem alterar o seu comportamento e registra o tempo por quadro e a VRAM com os mesmos critérios do motor C++;
-    \item \textbf{Motor C++/CUDA}: o motor descrito na Seção~\ref{sec:implementacao_motor}, com a rede executada pelo ONNX Runtime e a síntese pelo \textit{kernel} próprio;
-    \item \textbf{Controle ONNX Runtime}: a rede executada pelo ONNX Runtime, mas sem o \textit{kernel} próprio de síntese, para separar o efeito da troca do mecanismo de inferência do efeito do \textit{kernel} de convolução. Esta condição foi definida no protocolo, mas os seus resultados não estão incluídos nesta versão do texto (Seção~\ref{sec:riscos});
-    \item \textbf{Motor C++/CUDA em blocos}: a segunda versão do motor (Seção~\ref{sec:tiling}), com blocos de 256, 512 e 1024 pixels e margem de 96 pixels;
-    \item \textbf{Motor C++/CUDA com o alocador ajustado e em meia precisão}: a terceira versão do motor (Seção~\ref{sec:fp16}), em FP16 com o quadro inteiro e com blocos de 1024 e 512 pixels, e em FP32 com o quadro inteiro, para separar o efeito do alocador do efeito da precisão;
-    \item \textbf{\textit{Baseline} em meia precisão}: o mesmo código original da condição 1, com a execução envolvida pelo \texttt{torch.autocast}, o mecanismo de precisão mista do PyTorch. O código não é alterado: a rede calcula em FP16, e a função de síntese, que já declara suporte a esse mecanismo, converte os filtros para FP32 antes da convolução.
-\end{enumerate}
-
-Como as condições 1 e 2 utilizam o mesmo modelo e os mesmos filtros separáveis, a comparação entre elas isola o efeito da forma de execução (linguagem, mecanismo de inferência e gerenciamento de memória), e não o efeito da separabilidade em si, que está presente nas duas. Na condição 5 em FP16, muda também a precisão numérica; a comparação com a condição 1 mede, nesse caso, o efeito conjunto da forma de execução e da precisão, e a condição 6 permite separar os dois efeitos (Seção~\ref{sec:res_python_fp16}).
-
-% ---------------------------------------------------------------
-\section{Ambiente Experimental}
-\label{sec:ambiente}
-
-Todos os experimentos foram executados em um computador pessoal com configuração representativa do perfil de hardware de consumo discutido na Seção~\ref{sec:justificativa}. A Tabela~\ref{tab:ambiente} descreve o hardware e as versões de software utilizadas, informação necessária para a reprodutibilidade dos resultados.
-
-\begin{table}[H]
-\centering
-\caption{Hardware e software do ambiente experimental}
-\label{tab:ambiente}
-\begin{tabularx}{\textwidth}{@{}p{5.0cm}Y@{}}
-\toprule
-\textbf{Componente} & \textbf{Especificação} \\
-\midrule
-GPU & NVIDIA GeForce RTX 4060 Ti, 8 GB de VRAM (arquitetura Ada Lovelace, \textit{compute capability} 8.9) \\
-CPU & Intel Core i5-12400F \\
-Memória principal & 16 GB \\
-Sistema operacional & Windows 11 Home (\textit{driver} NVIDIA 610.47 na primeira bateria e 610.88 nas demais) \\
-Motor C++ & C++17, CUDA Toolkit 13.3, MSVC (Visual Studio 2022), CMake 4.4 \\
-Inferência & ONNX Runtime 1.23.2 (GPU) com \textit{CUDA Execution Provider}; conversão para FP16 com \textit{onnxconverter-common} 1.16 \\
-Entrada e saída de vídeo & OpenCV 4.13 (API C++ e Python) \\
-\textit{Baseline} & Python 3.10, PyTorch 2.11 (CUDA 12.8), implementação original de \citeonline{Niklaus2021} \\
-Métricas & scikit-image 0.25 (PSNR e SSIM), FFmpeg 9.0 com \textit{libvmaf} (VMAF) \\
-\bottomrule
-\end{tabularx}
-\legend{Fonte: Elaborado pelo autor (2026)}
-\end{table}
-
-Os \textit{clocks} da GPU não foram fixados: a placa operou com o gerenciamento de energia padrão do \textit{driver}. As condições da GPU no início da bateria (ocupação de memória, temperatura e \textit{clock}) foram registradas junto com os resultados, e o efeito da variação de \textit{clock} é mitigado pelo aquecimento e pelas medições repetidas descritos na Seção~\ref{sec:procedimento}.
-
-% ---------------------------------------------------------------
-\section{Conjunto de avaliação}
+\subsection{Conjunto de avaliação}
 \label{sec:dataset}
 
 Os testes utilizam um trecho do segundo trailer do jogo GTA VI \cite{Rockstar2025GTAVI}, disponível em resolução 3840 $\times$ 2160 a 30 FPS, escolhido por oferecer conteúdo em resolução nativa 4K com movimentos de câmera e de personagens. O material é protegido por direitos autorais e foi utilizado exclusivamente para avaliação científica, sem redistribuição dos vídeos.
 
-Como o trailer é composto por muitas cenas curtas, foi realizada uma detecção automática de cortes de cena, que identificou sete transições no intervalo de 20 segundos disponível. Cortes de cena não possuem movimento a ser interpolado e reduzem artificialmente as métricas de qualidade --- em uma execução preliminar, um único corte produziu um quadro com PSNR de 12,5 dB. Por isso, foi selecionado um trecho de 61 quadros (aproximadamente 2 segundos) contido no maior intervalo sem cortes.
+Como o trailer é composto por muitas cenas curtas, foi realizada uma detecção automática de cortes de cena, que identificou sete transições no intervalo de 20 segundos disponível. Cortes de cena não possuem movimento a ser interpolado e reduzem artificialmente as métricas de qualidade: em uma execução preliminar, um único corte produziu um quadro com PSNR de 12,5 dB. Por isso, foi selecionado um trecho de 61 quadros (aproximadamente 2 segundos) contido no maior intervalo sem cortes.
 
 O trecho foi convertido para quatro resoluções, que compõem a grade de resoluções avaliada: 1280 $\times$ 720 (720p), 1920 $\times$ 1080 (1080p), 2560 $\times$ 1440 (1440p) e 3840 $\times$ 2160 (2160p). Todos os vídeos de teste e de saída são gravados com o codec sem perdas FFV1, para que a compressão não interfira nas métricas de qualidade.
 
 Para relacionar a fidelidade visual aos conjuntos de referência da literatura, as implementações foram avaliadas também em dois deles. O primeiro são as 12 sequências do Middlebury que possuem o quadro intermediário real, distribuídas com o código de \citeonline{Niklaus2021}, com resolução de até 640 $\times$ 480 pixels. O segundo é uma amostra de 200 trios de quadros do conjunto de teste do Vimeo-90K \cite{Xue2019} (448 $\times$ 256 pixels), sorteados com semente fixa entre os 3.782 trios do conjunto; em cada trio, o quadro central é sintetizado a partir dos outros dois. Como o servidor oficial do conjunto recusou o \textit{download}, os dados foram obtidos de uma cópia pública no Hugging Face, que não documenta a sua procedência; a cópia tem o mesmo número de trios, a mesma organização de pastas e a mesma resolução do conjunto oficial. Nesses conjuntos, avaliou-se apenas a fidelidade visual, por PSNR e SSIM: as imagens são pequenas demais para as medições de desempenho, e o VMAF é uma métrica de vídeo.
 
-% ---------------------------------------------------------------
-\section{Procedimento de medição}
+\subsection{Procedimento de medição}
 \label{sec:procedimento}
 
 Para cada resolução, gera-se uma versão do trecho contendo apenas os quadros pares (15 FPS). Cada implementação interpola essa versão com fator $2\times$, reconstruindo um vídeo de 30 FPS no qual os quadros de índice ímpar são sintetizados. Esse procedimento permite medir o desempenho e a qualidade em uma única execução: os 30 quadros sintetizados são comparados aos quadros reais correspondentes do trecho original, que funcionam como \textit{ground truth}.
 
-As duas implementações leem e gravam os vídeos com a mesma biblioteca (OpenCV) e o mesmo esquema de interpolação. Cada combinação de implementação e resolução foi executada uma vez, em sequência, por um único \textit{script}. A segunda e a terceira versões do motor foram avaliadas em uma segunda e em uma terceira bateria, cada uma repetindo também a \textit{baseline} e o motor com o quadro inteiro, para que as condições fossem comparadas nas mesmas circunstâncias (Seções~\ref{sec:res_blocos} e \ref{sec:res_fp16}). Uma quarta bateria mediu, nas mesmas circunstâncias, as quatro combinações de implementação e precisão com o quadro inteiro (Seção~\ref{sec:res_python_fp16}). As três primeiras interpolações de cada execução são descartadas como aquecimento --- período em que ocorrem a inicialização do contexto CUDA, a seleção de algoritmos do cuDNN e a reserva inicial de memória ---, e as demais (27 por resolução) compõem a média e o desvio padrão do tempo por quadro. Em 2160p, devido ao tempo de execução, foram processados apenas cinco quadros de entrada, com uma interpolação de aquecimento, resultando em três medições de tempo e quatro quadros sintetizados avaliados.
+As duas implementações leem e gravam os vídeos com a mesma biblioteca (OpenCV) e o mesmo esquema de interpolação. Cada combinação de implementação e resolução foi executada uma vez, em sequência, por um único \textit{script}. A segunda e a terceira versões do motor foram avaliadas em uma segunda e em uma terceira bateria, cada uma repetindo também a \textit{baseline} e o motor com o quadro inteiro, para que as condições fossem comparadas nas mesmas circunstâncias (Seções~\ref{sec:res_blocos} e \ref{sec:res_fp16}). Uma quarta bateria mediu, nas mesmas circunstâncias, as quatro combinações de implementação e precisão com o quadro inteiro (Seção~\ref{sec:res_python_fp16}). As três primeiras interpolações de cada execução são descartadas como aquecimento, período em que ocorrem a inicialização do contexto CUDA, a seleção de algoritmos do cuDNN e a reserva inicial de memória, e as demais (27 por resolução) compõem a média e o desvio padrão do tempo por quadro. Em 2160p, devido ao tempo de execução, foram processados apenas cinco quadros de entrada, com uma interpolação de aquecimento, resultando em três medições de tempo e quatro quadros sintetizados avaliados.
 
 % ---------------------------------------------------------------
-\section{Métricas}
-\label{sec:metricas}
+\section{Resultados e análises}
+\label{sec:resultados}
 
-\begin{itemize}
-    \item \textbf{Latência}: tempo médio para sintetizar um quadro, incluindo a transferência dos quadros para a GPU, a inferência, a convolução e o retorno do resultado ao Host, acompanhado do desvio padrão entre as medições. No motor C++, o tempo também é decomposto por estágio (Seção~\ref{sec:instrumentacao}); na \textit{baseline}, nesta bateria, registrou-se apenas o tempo total;
-    \item \textbf{Taxa de quadros (FPS)}: quadros sintetizados por segundo, obtida como o inverso da latência média;
-    \item \textbf{Consumo de VRAM}: como o \textit{driver} do Windows não informa à NVML o consumo por processo, registra-se a ocupação total da GPU antes da inicialização da implementação (linha de base) e o pico observado durante a execução; o consumo atribuído à implementação é a diferença entre ambos. Nas duas primeiras baterias, a ocupação foi lida após cada interpolação; a partir da terceira, a cada milissegundo, por uma \textit{thread} separada, o que se mostrou necessário para o estudo do alocador (Seção~\ref{sec:fp16}) e não alterou os picos das condições anteriores em mais de 0,5\%. Para que a linha de base seja estável, nenhuma outra aplicação de uso intenso da GPU é executada durante as medições. No Windows, quando a VRAM se esgota, o \textit{driver} passa a utilizar a memória principal do sistema (\textit{Sysmem Fallback}) em vez de interromper a execução, o que eleva drasticamente a latência. Como a NVML não contabiliza essa memória, as execuções em que a VRAM foi saturada são sinalizadas: no motor C++, quando a ocupação atinge 97\% da capacidade; na \textit{baseline}, também quando a memória reservada pelo PyTorch excede a VRAM livre no início da execução;
-    \item \textbf{Fidelidade visual}: PSNR, SSIM e VMAF calculados exclusivamente sobre os quadros sintetizados. Incluir os quadros pares, que são cópias dos originais, elevaria artificialmente os resultados. Pelo mesmo motivo, as tarjas pretas horizontais presentes no trailer (\textit{letterbox}, 20\% da altura do quadro), reconstruídas sem erro por qualquer método, são excluídas da área avaliada. O VMAF é calculado pelo filtro \textit{libvmaf} do FFmpeg \cite{NetflixVMAFRepo} com o modelo padrão \texttt{vmaf\_v0.6.1}; como verificação, a comparação do vídeo de referência com ele mesmo resultou em 99,91, valor esperado para sequências idênticas.
-\end{itemize}
-
-% ---------------------------------------------------------------
-\section{Critérios de decisão e análise estatística}
-\label{sec:criterios}
-
-A hipótese é avaliada pelos três critérios da Seção~\ref{sec:hipotese}, em cada resolução:
-
-\begin{itemize}
-    \item \textbf{H1 (latência)}: as 27 medições de tempo de cada implementação são comparadas pelo teste $t$ de Welch unilateral, que não pressupõe variâncias iguais, ao nível de significância $\alpha = 0{,}05$. O critério é atendido se a diferença for significativa e a redução média for de pelo menos 10\%, limiar adotado para que a diferença seja relevante na prática, e não apenas estatisticamente detectável;
-    \item \textbf{H2 (VRAM)}: o pico de VRAM é uma medida única por execução, de modo que não se aplica teste estatístico. O critério é atendido se o pico do motor for no máximo 90\% do pico da \textit{baseline} e se a execução não tiver saturado a VRAM;
-    \item \textbf{H3 (fidelidade)}: as métricas são comparadas quadro a quadro entre as implementações, sobre os mesmos quadros sintetizados. O critério é atendido se a diferença média não exceder 0,1 dB de PSNR, 0,001 de SSIM e 0,5 ponto de VMAF, limites inferiores à variação observada entre quadros de uma mesma execução.
-\end{itemize}
-
-Os limiares numéricos foram fixados durante a revisão do texto, após a primeira bateria de testes. Para não ajustar os critérios aos resultados, os mesmos limiares são mantidos para as baterias seguintes e os resultados são relatados mesmo quando contrários à hipótese.
-
-% ---------------------------------------------------------------
-\section{Riscos e mitigações}
-\label{sec:riscos}
-
-A Tabela~\ref{tab:riscos} resume os riscos identificados para a conclusão do trabalho e as mitigações adotadas.
-
-\begin{table}[H]
-\centering
-\caption{Riscos identificados e mitigações}
-\label{tab:riscos}
-\small
-\begin{tabularx}{\textwidth}{@{}p{5.2cm}Y@{}}
-\toprule
-\textbf{Risco} & \textbf{Mitigação} \\
-\midrule
-Os ajustes do motor --- processamento em blocos, alocador do ONNX Runtime e inferência em FP16 --- não ficarem prontos a tempo & Os ajustes foram implementados e avaliados em ordem de prioridade, cada um em uma bateria própria (Seções~\ref{sec:res_blocos} e \ref{sec:res_fp16}) \\
-\midrule
-A VRAM se esgotar em 1440p e 2160p e o \textit{driver} passar a usar a memória principal & Execuções sinalizadas como saturadas e analisadas separadamente; a hipótese é avaliada em 720p e 1080p; o processamento em blocos (Seção~\ref{sec:tiling}) é avaliado como forma de evitar a saturação \\
-\midrule
-Base de avaliação restrita a um único trecho de vídeo & Avaliação complementar da fidelidade no Middlebury e no Vimeo-90K; delimitação explícita do alcance das conclusões \\
-\midrule
-Variação de \textit{clock} e de ocupação da GPU entre execuções & Aquecimento, 27 medições por condição, registro das condições da GPU e repetição das baterias \\
-\midrule
-Condição de controle (ONNX Runtime sem \textit{kernel} próprio) não executada & Relatada como limitação; sem ela, a diferença de latência é atribuída ao conjunto da forma de execução, e não a um componente específico \\
-\bottomrule
-\end{tabularx}
-\legend{Fonte: Elaborado pelo autor (2026)}
-\end{table}
-% TODO(Pedro): registrar aqui a data-limite do tiling definida na issue sepconv-cuda-inference#6.
-
-% ---------------------------------------------------------------
-\clearpage
-
-\section{Cronograma de trabalho}
-\label{sec:cronograma}
-
-O cronograma a seguir apresenta, no formato de diagrama de Gantt, as atividades previstas para o desenvolvimento do TCC2, distribuídas ao longo das semanas do semestre.
-
-\begin{figure}[H]
-    \centering
-    \caption{Cronograma de atividades -- Diagrama de Gantt}
-    \label{fig:gantt}
-
-    \resizebox{\textwidth}{!}{
-    \begin{ganttchart}[
-        hgrid,
-        vgrid,
-        x unit=0.75cm,
-        y unit title=0.6cm,
-        y unit chart=0.7cm,
-        title height=1,
-        bar height=0.5,
-        bar label font=\tiny,
-        title label font=\small,
-        milestone label font=\tiny\itshape,
-        group label font=\scriptsize\bfseries,
-        bar/.append style={fill=senacblue!40},
-        group/.append style={draw=black, fill=senacblue!70},
-        milestone/.append style={fill=red!70},
-    ]{1}{16}
-
-        % Semanas
-        \gantttitle{Semanas}{16} \\
-        \gantttitlelist{1,...,16}{1} \\
-
-        % Fase 1
-        \ganttgroup{Fase 1: Planejamento}{1}{4} \\
-        \ganttbar{Revisão bibliográfica}{1}{4} \\
-        \ganttbar{Arquitetura da solução}{2}{4} \\
-        \ganttbar{Planejamento experimental}{3}{4} \\
-        \ganttmilestone{Entrega TCC1}{4} \\
-
-        % Fase 2
-        \ganttgroup{Fase 2: Desenvolvimento}{5}{11} \\
-        \ganttbar{Módulo de I/O}{5}{6} \\
-        \ganttbar{Integração ONNX Runtime}{6}{8} \\
-        \ganttbar{Kernels CUDA}{8}{10} \\
-        \ganttbar{Integração do pipeline}{10}{11} \\
-        \ganttmilestone{Protótipo funcional}{11} \\
-
-        % Fase 3
-        \ganttgroup{Fase 3: Validação}{12}{16} \\
-        \ganttbar{Extração de métricas}{12}{14} \\
-        \ganttbar{Avaliação PSNR/SSIM}{13}{15} \\
-        \ganttbar{Análise dos resultados}{14}{15} \\
-        \ganttmilestone{Validação experimental}{15} \\
-
-        % Escrita
-        \ganttgroup{Documentação}{1}{16} \\
-        \ganttbar{Redação e revisão do TCC}{1}{16} \\
-        \ganttmilestone{Entrega final}{16}
-
-        % Dependências
-        \ganttlink{elem2}{elem3}
-        \ganttlink{elem3}{elem4}
-        \ganttlink{elem6}{elem7}
-        \ganttlink{elem7}{elem8}
-        \ganttlink{elem8}{elem9}
-        \ganttlink{elem10}{elem11}
-
-    \end{ganttchart}
-    }
-
-    \legend{Fonte: Elaborado pelo autor (2026)}
-\end{figure}
-
-% ===============================================================
-% CAPÍTULO 5 - RESULTADOS E DISCUSSÃO
-% ===============================================================
-\chapter{Resultados e Discussão}
-\label{cap:resultados}
-
-Este capítulo apresenta os resultados da primeira versão do motor C++/CUDA, que reproduz a estratégia de memória da implementação original: todos os tensores do quadro inteiro são processados de uma só vez. A Tabela~\ref{tab:resultados_gta} consolida as medições, detalhadas nas seções seguintes. Os resultados da segunda versão, com processamento em blocos, e da terceira, com o alocador ajustado e meia precisão, são apresentados nas Seções~\ref{sec:res_blocos} e \ref{sec:res_fp16}; a Seção~\ref{sec:res_python_fp16} separa o efeito da forma de execução do efeito da precisão, a Seção~\ref{sec:res_conjuntos} avalia a fidelidade nos conjuntos de referência, e a Seção~\ref{sec:discussao} analisa as três versões frente à hipótese.
+Esta seção apresenta os resultados da primeira versão do motor C++/CUDA, que reproduz a estratégia de memória da implementação original: todos os tensores do quadro inteiro são processados de uma só vez. A Tabela~\ref{tab:resultados_gta} consolida as medições, detalhadas a seguir. Os resultados da segunda versão, com processamento em blocos, e da terceira, com o alocador ajustado e meia precisão, são apresentados nas Seções~\ref{sec:res_blocos} e \ref{sec:res_fp16}; a Seção~\ref{sec:res_python_fp16} separa o efeito da forma de execução do efeito da precisão, a Seção~\ref{sec:res_conjuntos} avalia a fidelidade nos conjuntos de referência, e a Seção~\ref{sec:discussao} analisa as três versões frente à hipótese.
 
 \begin{table}[H]
 \centering
 \caption{Desempenho e fidelidade visual por resolução (interpolação 2$\times$)}
 \label{tab:resultados_gta}
 \footnotesize
-\setlength{\tabcolsep}{4pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{llrrrrrr}
 \toprule
 \textbf{Res.} & \textbf{Implementação} & \textbf{ms/quadro} & \textbf{FPS} & \textbf{VRAM (MiB)} & \textbf{PSNR (dB)} & \textbf{SSIM} & \textbf{VMAF} \\
@@ -1278,7 +1209,7 @@ Este capítulo apresenta os resultados da primeira versão do motor C++/CUDA, qu
 \end{table}
 
 % ---------------------------------------------------------------
-\section{Latência}
+\subsection{Latência}
 \label{sec:res_latencia}
 
 A Figura~\ref{fig:latencia} apresenta o tempo médio por quadro interpolado. Em 720p e 1080p, resoluções em que a VRAM foi suficiente para as duas implementações, o motor C++ foi cerca de 24\% mais rápido que a \textit{baseline} (133,9 ms contra 176,8 ms e 305,5 ms contra 404,9 ms), com desvio padrão inferior a 1\% da média. A partir de 1440p, a VRAM se esgota nas duas implementações e o comportamento se inverte: o motor C++ passa a levar 7,7 s por quadro, cerca de 5,8 vezes mais que a \textit{baseline} (1,3 s), e em 2160p não consegue alocar memória para a inferência. A implementação em PyTorch conclui o 2160p, porém com 64,9 s por quadro, pois a maior parte dos tensores passa a residir na memória principal.
@@ -1302,7 +1233,7 @@ A Figura~\ref{fig:etapas} mostra como o tempo do motor C++ se distribui entre os
 \end{figure}
 
 % ---------------------------------------------------------------
-\section{Consumo de VRAM}
+\subsection{Consumo de VRAM}
 \label{sec:res_vram}
 
 Ao contrário do esperado pela hipótese deste trabalho, a primeira versão do motor C++ consumiu \textbf{mais} VRAM que a \textit{baseline} (Figura~\ref{fig:vram}): 3.138 MiB contra 2.149 MiB em 720p e 6.648 MiB contra 4.585 MiB em 1080p, aproximadamente 45\% a mais. Duas causas prováveis foram identificadas na análise da implementação e investigadas na terceira versão do motor (Seção~\ref{sec:fp16}). Primeiro, o motor mantém alocados durante toda a execução os quatro tensores de filtros (cerca de 1,6 GB em 1080p), enquanto o PyTorch libera os tensores intermediários assim que deixam de ser utilizados. Segundo, o ONNX Runtime reserva memória para os tensores intermediários da rede em um alocador próprio (\textit{arena}) que não a devolve entre execuções. Ajustes das opções do \textit{CUDA Execution Provider} relacionadas ao espaço de trabalho do cuDNN não alteraram o consumo de forma perceptível.
@@ -1316,7 +1247,7 @@ Ao contrário do esperado pela hipótese deste trabalho, a primeira versão do m
 \end{figure}
 
 % ---------------------------------------------------------------
-\section{Fidelidade visual}
+\subsection{Fidelidade visual}
 \label{sec:res_fidelidade}
 
 As duas implementações produziram resultados idênticos em todas as resoluções avaliadas: PSNR e SSIM coincidem até a quarta casa decimal, e o VMAF médio difere em menos de 0,001 ponto (Figura~\ref{fig:qualidade}). Quadro a quadro, a maior diferença de VMAF entre as implementações foi de 0,02 ponto. Esse resultado é coerente com a equivalência verificada na Seção~\ref{sec:equivalencia} e confirma que a mudança da forma de execução não degradou a qualidade dos quadros sintetizados.
@@ -1329,9 +1260,9 @@ As duas implementações produziram resultados idênticos em todas as resoluçõ
     \legend{Fonte: Elaborado pelo autor (2026)}
 \end{figure}
 
-Observa-se, por outro lado, uma queda da qualidade com o aumento da resolução. Como em 2160p foram avaliados apenas os quatro primeiros quadros sintetizados, a comparação justa entre resoluções deve considerar os mesmos quadros: nesse recorte, o PSNR cai de 32,48 dB (720p) para 31,44 dB (2160p), uma redução de cerca de 1 dB, enquanto o VMAF cai de 78,88 para 50,33. Duas hipóteses, ainda não verificadas, podem explicar o comportamento. A primeira é o alcance limitado dos filtros: com $N = 51$, o modelo representa deslocamentos de até 25 pixels em cada direção, e o mesmo movimento da cena ocupa, em 2160p, três vezes mais pixels que em 720p --- limitação que motivou propostas como a convolução separável multinível de \citeonline{Wijma2021}, voltada a grandes deslocamentos. A segunda é metodológica e afeta especificamente o VMAF: o modelo utilizado foi calibrado para a visualização de conteúdo em 1080p, e há um modelo específico para 4K.
+Observa-se, por outro lado, uma queda da qualidade com o aumento da resolução. Como em 2160p foram avaliados apenas os quatro primeiros quadros sintetizados, a comparação justa entre resoluções deve considerar os mesmos quadros: nesse recorte, o PSNR cai de 32,48 dB (720p) para 31,44 dB (2160p), uma redução de cerca de 1 dB, enquanto o VMAF cai de 78,88 para 50,33. Duas hipóteses, ainda não verificadas, podem explicar o comportamento. A primeira é o alcance limitado dos filtros: com $N = 51$, o modelo representa deslocamentos de até 25 pixels em cada direção, e o mesmo movimento da cena ocupa, em 2160p, três vezes mais pixels que em 720p, limitação que motivou propostas como a convolução separável multinível de \citeonline{Wijma2021}, voltada a grandes deslocamentos. A segunda é metodológica e afeta especificamente o VMAF: o modelo utilizado foi calibrado para a visualização de conteúdo em 1080p, e há um modelo específico para 4K.
 
-A Figura~\ref{fig:comparacao_quadro} apresenta um exemplo qualitativo em 1080p. Para evitar a escolha de um caso favorável, foi utilizado o quadro sintetizado de PSNR mediano, o de índice 47 no trecho de 30 FPS (os quadros de índice ímpar são os sintetizados, Seção~\ref{sec:procedimento}). O mapa de erro mostra que as diferenças em relação ao quadro real se concentram nas bordas de objetos em movimento --- como o contorno do personagem e de seu braço --- e em texturas finas, enquanto as regiões estáticas são reconstruídas com erro próximo de zero.
+A Figura~\ref{fig:comparacao_quadro} apresenta um exemplo qualitativo em 1080p. Para evitar a escolha de um caso favorável, foi utilizado o quadro sintetizado de PSNR mediano, o de índice 47 no trecho de 30 FPS (os quadros de índice ímpar são os sintetizados, Seção~\ref{sec:procedimento}). O mapa de erro mostra que as diferenças em relação ao quadro real se concentram nas bordas de objetos em movimento, como o contorno do personagem e de seu braço, e em texturas finas, enquanto as regiões estáticas são reconstruídas com erro próximo de zero.
 
 \begin{figure}[H]
     \centering
@@ -1352,7 +1283,7 @@ A Figura~\ref{fig:psnr_quadros} detalha o PSNR de cada quadro sintetizado. As cu
 \end{figure}
 
 % ---------------------------------------------------------------
-\section{Segunda versão: processamento em blocos}
+\subsection{Segunda versão: processamento em blocos}
 \label{sec:res_blocos}
 
 A segunda versão do motor (Seção~\ref{sec:tiling}) foi avaliada em uma nova bateria, com o mesmo protocolo e o mesmo trecho de vídeo, para blocos de 1024, 512 e 256 pixels e margem de 96 pixels. Para que todas as condições fossem medidas nas mesmas circunstâncias, a bateria repetiu também o motor com o quadro inteiro e a \textit{baseline}. Nas execuções sem saturação da VRAM, as médias repetidas diferiram das da primeira bateria em menos de 0,5\%; nas execuções saturadas, em até 4,3\%. A Tabela~\ref{tab:resultados_blocos} consolida as medições.
@@ -1441,7 +1372,7 @@ O custo em latência dos blocos tem duas origens, separadas na Tabela~\ref{tab:s
 \end{table}
 
 % ---------------------------------------------------------------
-\section{Terceira versão: alocador ajustado e meia precisão}
+\subsection{Terceira versão: alocador ajustado e meia precisão}
 \label{sec:res_fp16}
 
 A terceira versão do motor (Seção~\ref{sec:fp16}) foi avaliada em uma terceira bateria, com o mesmo protocolo, em cinco séries: o motor em FP32 com o quadro inteiro, agora com o alocador ajustado; o motor em FP16 com o quadro inteiro e com blocos de 1024 e de 512 pixels; e a \textit{baseline}. As medições repetidas da \textit{baseline} diferiram das da segunda bateria em menos de 1\%. A Tabela~\ref{tab:resultados_fp16} consolida os resultados.
@@ -1506,7 +1437,7 @@ Quanto à memória (Figura~\ref{fig:vram_fp16}), o motor em FP16 com o quadro in
 \end{figure}
 
 % ---------------------------------------------------------------
-\section{Forma de execução e precisão: as quatro combinações}
+\subsection{Forma de execução e precisão: as quatro combinações}
 \label{sec:res_python_fp16}
 
 A comparação entre o motor em FP16 e a \textit{baseline} em FP32 reúne dois efeitos. Para separá-los, uma quarta bateria mediu, com o quadro inteiro e o mesmo protocolo, as quatro combinações de implementação e precisão (Tabela~\ref{tab:quatro_combinacoes} e Figura~\ref{fig:latencia_python_fp16}). As séries já medidas na terceira bateria repetiram os tempos com diferença inferior a 1\% em 720p, 1080p e 1440p sem saturação, mesmo com a GPU mais ocupada no início das execuções (até 1,3 GB, contra 0,5 GB a 0,9 GB).
@@ -1570,7 +1501,7 @@ Quanto à memória, o resultado se inverte conforme a precisão: em FP32, o moto
 Nas resoluções em que há saturação, os resultados refletem principalmente a memória disponível. Em 1440p, o PyTorch em FP16 deixa de saturar a VRAM e leva 543,6 ms, contra 1.343,7 ms em FP32; o motor em FP16 ainda é 39,5\% mais rápido, com 72,5\% da sua VRAM. Em 2160p, as três execuções concluídas saturam a VRAM, e a redução de 12,4\% do PyTorch em FP16 não é significativa ($p = 0{,}079$, com três medições).
 
 % ---------------------------------------------------------------
-\section{Conjuntos de referência}
+\subsection{Conjuntos de referência}
 \label{sec:res_conjuntos}
 
 A Tabela~\ref{tab:conjuntos} apresenta a fidelidade visual no Middlebury e na amostra do Vimeo-90K (Seção~\ref{sec:dataset}). As três implementações avaliadas produziram resultados equivalentes: par a par, a diferença média de PSNR em relação à \textit{baseline} foi de no máximo 0,001 dB, com maior diferença de 0,027 dB em um único par, e a diferença média de SSIM foi inferior a $2 \times 10^{-5}$.
@@ -1597,7 +1528,7 @@ Python/PyTorch & 37,22 & 34,46 & 0,9680 & 0,9590 \\
 O \textit{script} de avaliação distribuído com o código de \citeonline{Niklaus2021}, executado no mesmo ambiente, resulta em 37,28 dB e 0,9681 no Middlebury. A diferença de 0,06 dB decorre apenas da conversão para 8 bits: o \textit{script} arredonda a saída da rede, enquanto o motor e o código de interpolação original a truncam. Esses conjuntos confirmam, portanto, em imagens de referência da literatura, a equivalência observada no vídeo do GTA VI.
 
 % ---------------------------------------------------------------
-\section{Discussão frente à hipótese}
+\subsection{Discussão frente à hipótese}
 \label{sec:discussao}
 
 A Tabela~\ref{tab:hipotese} resume a avaliação dos três critérios da Seção~\ref{sec:criterios} nas resoluções em que a VRAM foi suficiente para as duas implementações.
@@ -1611,11 +1542,11 @@ A Tabela~\ref{tab:hipotese} resume a avaliação dos três critérios da Seção
 \toprule
 \textbf{Critério} & \textbf{720p} & \textbf{1080p} & \textbf{Resultado} \\
 \midrule
-H1 -- Latência & $-24{,}3\%$; $t = 201$, $p < 0{,}001$ & $-24{,}6\%$; $t = 182$, $p < 0{,}001$ & Atendido \\
+H1: Latência & $-24{,}3\%$; $t = 201$, $p < 0{,}001$ & $-24{,}6\%$; $t = 182$, $p < 0{,}001$ & Atendido \\
 \midrule
-H2 -- VRAM & $+46\%$ (3.138 contra 2.149 MiB) & $+45\%$ (6.648 contra 4.585 MiB) & Não atendido \\
+H2: VRAM & $+46\%$ (3.138 contra 2.149 MiB) & $+45\%$ (6.648 contra 4.585 MiB) & Não atendido \\
 \midrule
-H3 -- Fidelidade & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $< 10^{-6}$; VMAF $0{,}003$ & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $0$; VMAF $< 0{,}001$ & Atendido \\
+H3: Fidelidade & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $< 10^{-6}$; VMAF $0{,}003$ & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $0$; VMAF $< 0{,}001$ & Atendido \\
 \bottomrule
 \end{tabularx}
 \legend{Variações do motor C++ em relação à \textit{baseline}. Teste $t$ de Welch unilateral com 27 medições por implementação. Fonte: Elaborado pelo autor (2026)}
@@ -1623,7 +1554,7 @@ H3 -- Fidelidade & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $< 10^{-6}$; VM
 
 Na primeira versão do motor, a hipótese foi, portanto, \textbf{confirmada apenas parcialmente}. A redução de latência foi observada nas resoluções em que a VRAM é suficiente, com margem muito superior ao limiar de 10\% e sem qualquer perda de fidelidade visual. A redução do consumo de VRAM, porém, não se verificou: a simples transposição da inferência para C++ e ONNX Runtime, mantendo o processamento do quadro inteiro, consome mais memória que a implementação original e degrada mais rapidamente quando a memória se esgota. Em 1440p e 2160p, nenhum dos critérios de desempenho é atendido, pois as duas implementações saturam a VRAM e o motor C++ fica mais lento que a \textit{baseline}.
 
-Esse resultado indica que o benefício esperado sobre a memória não decorre automaticamente da troca de linguagem ou de \textit{framework}, mas depende de um controle explícito do uso de memória --- em particular, de não manter simultaneamente na VRAM os tensores de filtros e as ativações intermediárias do quadro inteiro. Indica também uma distinção que a formulação inicial da hipótese não fazia: a separabilidade dos filtros é o que torna o modelo executável em 1080p em uma GPU de 8 GB (1,6 GB de filtros contra os 40 GB de um \textit{kernel} bidimensional), mas, como está presente nas duas implementações, ela não explica as diferenças entre elas. Essas diferenças decorrem da forma de execução.
+Esse resultado indica que o benefício esperado sobre a memória não decorre automaticamente da troca de linguagem ou de \textit{framework}, mas depende de um controle explícito do uso de memória, em particular de não manter simultaneamente na VRAM os tensores de filtros e as ativações intermediárias do quadro inteiro. Indica também uma distinção que a formulação inicial da hipótese não fazia: a separabilidade dos filtros é o que torna o modelo executável em 1080p em uma GPU de 8 GB (1,6 GB de filtros contra os 40 GB de um \textit{kernel} bidimensional), mas, como está presente nas duas implementações, ela não explica as diferenças entre elas. Essas diferenças decorrem da forma de execução.
 
 A segunda versão do motor introduz esse controle explícito, e a Tabela~\ref{tab:hipotese_blocos} aplica a ela os mesmos critérios, nas mesmas resoluções. O critério de fidelidade (H3) é atendido por todos os tamanhos de bloco (Seção~\ref{sec:res_blocos}).
 
@@ -1675,25 +1606,49 @@ FP16, blocos 512 & $+130\%$ / $+72\%$ & 42\% / 20\% & Não atendido & Atendido \
 
 O motor em FP16 com o quadro inteiro é a primeira configuração a atender os três critérios simultaneamente em 720p e em 1080p: reduz a latência em mais da metade e o pico de VRAM em cerca de 30\%, com fidelidade equivalente à da implementação original. Esse resultado reúne dois efeitos, separados na Seção~\ref{sec:res_python_fp16}. Parte do ganho vem da precisão, que também acelera o PyTorch: em FP16, ele alcança o tempo do motor em FP32. Mas a forma de execução mantém uma vantagem independente: comparados na mesma precisão, o motor é cerca de 24\% mais rápido em FP32 e cerca de 40\% em FP16. Os critérios H1 e H2 também seriam atendidos pelo motor em FP16 tomando a \textit{baseline} em FP16 como referência, com redução de 39,8\% na latência e pico de 80\% em 1080p. Quanto à memória, o resultado não pode ser atribuído à troca de linguagem: em FP32, com o alocador ajustado, o motor ainda consome mais que a \textit{baseline} (107\% em 1080p), e a vantagem em FP16 inclui a decisão de manter os filtros em meia precisão também na síntese.
 
-Em 1440p e 2160p, a terceira versão amplia o que a segunda havia mostrado. O motor em FP16 com o quadro inteiro processa 1440p sem saturar a VRAM, 4,1 vezes mais rápido que a \textit{baseline}, e o motor em FP16 com blocos de 1024 pixels processa 2160p com 3,1 GB, em 1,19 s por quadro. Em síntese, os resultados indicam que a redução de latência decorre da forma de execução --- presente desde a primeira versão, em FP32 --- e é ampliada pela precisão numérica, enquanto a redução de memória decorre de decisões explícitas de gerenciamento --- desativar o padrão de memória do ONNX Runtime, reduzir a precisão e, nas resoluções em que o quadro inteiro não cabe, processar em blocos.
+Em 1440p e 2160p, a terceira versão amplia o que a segunda havia mostrado. O motor em FP16 com o quadro inteiro processa 1440p sem saturar a VRAM, 4,1 vezes mais rápido que a \textit{baseline}, e o motor em FP16 com blocos de 1024 pixels processa 2160p com 3,1 GB, em 1,19 s por quadro. Em síntese, os resultados indicam que a redução de latência decorre da forma de execução, presente desde a primeira versão, em FP32, e é ampliada pela precisão numérica. Já a redução de memória decorre de decisões explícitas de gerenciamento: desativar o padrão de memória do ONNX Runtime, reduzir a precisão e, nas resoluções em que o quadro inteiro não cabe, processar em blocos.
 
 % ===============================================================
-% CAPÍTULO 6 - CONCLUSÃO
+% CAPÍTULO 4 - CONCLUSÃO
 % ===============================================================
 \chapter{Conclusão}
 \label{cap:conclusao}
 
-Este trabalho investigou em que medida um motor de inferência nativo em C++ e CUDA para o modelo SepConv é capaz de reduzir a latência e o consumo de VRAM em uma GPU de consumo de 8 GB, mantendo a fidelidade visual da implementação original (Seção~\ref{sec:problema}). Para isso, foi desenvolvido um motor que integra a leitura de vídeo pela OpenCV, a inferência da rede SepConv++ pelo ONNX Runtime com \textit{I/O binding} e um \textit{kernel} CUDA próprio para a síntese do quadro, numericamente equivalente à implementação original em PyTorch (93,67 dB de PSNR entre as saídas). A exportação do modelo para ONNX foi corrigida para aceitar resoluções arbitrárias e validada contra a rede original.
+\section{Retomada do problema e dos objetivos}
+\label{sec:retomada}
 
-Na primeira versão do motor, os resultados dependeram da métrica considerada. Quanto à \textbf{latência}, o motor C++ reduziu o tempo por quadro em cerca de 24\% em 720p e 1080p, de 404,9 ms para 305,5 ms em 1080p, com quadros de fidelidade idêntica à da implementação original. Quanto ao \textbf{consumo de VRAM}, a primeira versão do motor não trouxe redução: consumiu cerca de 45\% mais memória que a \textit{baseline} e, a partir de 1440p, ficou mais lento que ela, chegando a falhar em 2160p. A transposição para C++ é, portanto, suficiente para reduzir a latência, mas não para reduzir a memória; para isso, é necessário um controle explícito da alocação, que a primeira versão ainda não exerce. Esse controle foi introduzido em uma segunda versão do motor, com processamento em blocos (Seção~\ref{sec:tiling}), de saída equivalente à do quadro inteiro. Com ela, o pico de VRAM passou a depender do tamanho do bloco --- no máximo 2.407 MiB com blocos de 512 pixels, mesmo em 2160p --- e o motor processou todas as resoluções sem saturar a VRAM, sendo mais rápido que a \textit{baseline} em 1440p e 2160p. Em 720p e 1080p, porém, os blocos aumentaram a latência, e nenhuma configuração em blocos atendeu aos critérios de latência e de memória ao mesmo tempo: a redução de memória tem como custo o reprocessamento das margens dos blocos.
+Este trabalho investigou em que medida um motor de inferência nativo em C++ e CUDA para o modelo SepConv reduz a latência e o consumo de VRAM em uma GPU de consumo de 8 GB, mantendo a fidelidade visual da implementação original (Seção~\ref{sec:problema}). A resposta é afirmativa, com uma ressalva sobre a origem de cada ganho. A redução de latência decorre da forma de execução, presente desde a primeira versão, e é ampliada pela precisão numérica. A redução de memória não decorre da troca de linguagem ou de \textit{framework}, mas de decisões explícitas sobre o alocador, a precisão numérica e, quando necessário, o processamento em blocos, que o motor nativo torna diretamente controláveis. Com essas decisões e o quadro inteiro em FP16, o motor sintetizou cada quadro em 183,0 ms em 1080p, contra 406,3 ms da \textit{baseline}, com 67\% da sua VRAM, e atendeu aos três critérios da hipótese em 720p e 1080p.
 
-A terceira versão do motor eliminou esse compromisso nas resoluções em que o quadro inteiro cabe na VRAM. O estudo do alocador mostrou que a maior parte da memória excedente da primeira versão vinha do padrão de memória do ONNX Runtime, cuja desativação reduziu o pico em 1080p em 29\% sem custo de tempo; e a inferência em meia precisão, com fidelidade equivalente à original no vídeo de teste, no Middlebury e no Vimeo-90K, reduziu ainda mais a memória e o tempo. Com o quadro inteiro em FP16, o motor sintetizou cada quadro em 183,0 ms em 1080p, contra 406,3 ms da \textit{baseline}, com 67\% da sua VRAM, atendendo pela primeira vez aos três critérios da hipótese em 720p e 1080p; em 1440p, processou o quadro inteiro sem saturar a VRAM, 4,1 vezes mais rápido que a \textit{baseline}, e, em 2160p, com blocos de 1024 pixels, em 1,19 s por quadro com 3,1 GB.
+Os objetivos específicos da Seção~\ref{sec:objetivos} foram atingidos da seguinte forma:
 
-A resposta à questão de pesquisa é, portanto, afirmativa, com uma ressalva sobre a sua origem. A redução de latência decorre da forma de execução: está presente desde a primeira versão, com a mesma precisão da implementação original. A redução de memória, por outro lado, não decorre da troca de linguagem ou de \textit{framework}, mas de decisões explícitas de gerenciamento --- a configuração do alocador, a precisão numérica e, quando necessário, o processamento em blocos ---, que o motor nativo torna diretamente controláveis. A medição das quatro combinações de implementação e precisão confirmou essa separação: na mesma precisão, o motor é cerca de 24\% mais rápido em FP32 e 40\% em FP16, e a meia precisão reduz o tempo em cerca de 25\% no PyTorch e 40\% no motor. O ganho total de 55\% resulta, portanto, dos dois fatores.
+\begin{enumerate}
+    \item \textbf{Equivalência}: o motor integra a leitura de vídeo pela OpenCV, a inferência pelo ONNX Runtime com \textit{I/O binding} e um \textit{kernel} CUDA próprio, e sua saída é numericamente equivalente à da implementação original (93,67 dB de PSNR entre as saídas). Para isso, foi necessário corrigir a exportação do modelo para ONNX, de modo a aceitar resoluções arbitrárias;
+    \item \textbf{Latência}: a primeira versão reduziu o tempo por quadro em cerca de 24\% em 720p e 1080p (de 404,9 ms para 305,5 ms em 1080p), atendendo ao critério H1. A partir de 1440p, a saturação da VRAM inverteu o resultado: essa versão ficou mais lenta que a \textit{baseline} e falhou em 2160p;
+    \item \textbf{VRAM}: a primeira versão consumiu cerca de 45\% mais memória que a \textit{baseline} e não atendeu ao critério H2, que só foi atendido na terceira versão, em FP16. Essa versão processou 1440p com o quadro inteiro sem saturar a VRAM, 4,1 vezes mais rápido que a \textit{baseline}, e 2160p, com blocos de 1024 pixels, em 1,19 s por quadro com 3,1 GB;
+    \item \textbf{Fidelidade}: o critério H3 foi atendido nas três versões, com resultados equivalentes aos da implementação original no vídeo de teste, no Middlebury e no Vimeo-90K;
+    \item \textbf{Fontes do consumo}: o padrão de memória do ONNX Runtime foi a principal fonte da memória excedente, e sua desativação reduziu o pico em 1080p em 29\%, sem custo de tempo. O processamento em blocos fez o pico depender do tamanho do bloco (no máximo 2.407 MiB com blocos de 512 pixels, mesmo em 2160p) e superou a \textit{baseline} em 1440p e 2160p. Em 720p e 1080p, porém, o reprocessamento das margens aumentou a latência, e nenhuma configuração em blocos atendeu aos critérios de latência e de memória ao mesmo tempo;
+    \item \textbf{Forma de execução e precisão}: na mesma precisão, o motor é cerca de 24\% mais rápido em FP32 e 40\% em FP16, e a meia precisão reduz o tempo em cerca de 25\% no PyTorch e 40\% no motor. O ganho total de 55\% resulta, portanto, dos dois fatores.
+\end{enumerate}
 
-Como contribuições, destacam-se: a correção da exportação ONNX do modelo para resoluções arbitrárias; um motor de inferência em C++/CUDA verificado contra a implementação original; uma bateria de testes reprodutível, com medição por estágio e critérios de VRAM que consideram o \textit{Sysmem Fallback} do Windows; o processamento em blocos com normalização global e margem de sobreposição definida experimentalmente, com a quantificação do seu compromisso entre memória e latência; a identificação do padrão de memória do ONNX Runtime como principal fonte de consumo excedente; a inferência em meia precisão com filtros em FP16 e acumulação em FP32, sem perda de fidelidade; e a constatação, relatada mesmo sendo contrária à hipótese inicial, de que a troca de linguagem e de \textit{framework} não reduz por si só o consumo de memória.
+\section{Contribuições para a Computação}
+\label{sec:contribuicoes}
 
-\section{Limitações}
+A principal contribuição é a constatação, baseada em medições, de que a troca de linguagem e de \textit{framework} reduz a latência da inferência, mas não reduz por si só o consumo de memória, ao contrário do que a hipótese inicial supunha. Em seguida, em ordem decrescente de importância, destacam-se:
+
+\begin{enumerate}
+    \item A separação, pela medição das quatro combinações de implementação e precisão, do efeito da forma de execução e do efeito da precisão numérica;
+    \item A identificação do padrão de memória do ONNX Runtime como principal fonte do consumo excedente;
+    \item A quantificação do compromisso entre memória e latência do processamento em blocos, com normalização global e margem de sobreposição definida experimentalmente;
+    \item A inferência em meia precisão com filtros em FP16 e acumulação em FP32, sem perda de fidelidade;
+    \item Um protocolo de testes reprodutível, com medição por estágio e critérios de VRAM que consideram o \textit{Sysmem Fallback} do Windows;
+    \item O motor de inferência verificado contra a implementação original e a correção da exportação ONNX do modelo para resoluções arbitrárias.
+\end{enumerate}
+
+Como lição do processo, a comparação do consumo de memória depende de como ele é medido: a leitura da VRAM após cada interpolação não foi suficiente para o estudo do alocador, que exigiu a consulta contínua à NVML (Seção~\ref{sec:fp16}).
+
+\section{Limitações e trabalhos futuros}
+
+\subsection{Limitações}
 \label{sec:limitacoes}
 
 \begin{itemize}
@@ -1709,7 +1664,7 @@ Como contribuições, destacam-se: a correção da exportação ONNX do modelo p
     \item No Windows, a NVML não informa o consumo por processo, e o consumo foi estimado pela diferença em relação à linha de base da GPU.
 \end{itemize}
 
-\section{Trabalhos futuros}
+\subsection{Trabalhos futuros}
 \label{sec:trabalhos_futuros}
 
 \begin{enumerate}
