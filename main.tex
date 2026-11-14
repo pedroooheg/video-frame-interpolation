@@ -34,7 +34,6 @@
 \usepackage{array}                  % Utilitários avançados de colunas para tabelas
 \usepackage{ragged2e}               % Melhora o alinhamento de texto dentro das tabelas
 \usepackage{amsmath,amssymb}        % Símbolos matemáticos
-\usepackage{pgfgantt}               % Diagramas de Gantt
 \usepackage[brazilian,hyperpageref]{backref}  % Páginas com citações
 \usepackage[alf]{abntex2cite}       % Citações ABNT
 \usepackage{tikz}                   % Gráficos e diagramas TikZ
@@ -73,6 +72,12 @@
 \renewcommand{\ABNTEXfontereduzida}{\fontsize{10}{12}\selectfont}
 \captionnamefont{\ABNTEXfontereduzida}   % rótulo "Figura N"/"Tabela N"
 \captiontitlefont{\ABNTEXfontereduzida}  % texto do título da legenda
+
+% Valores de referência das métricas, repetidos nas notas das tabelas
+\newcommand{\RefDesempenho}{Tempo por quadro (ms) e VRAM: menor é melhor. FPS: maior é melhor.}
+\newcommand{\RefVRAM}{VRAM: consumo atribuído à implementação, igual ao pico de ocupação da GPU menos a ocupação antes da execução. A GPU tem 8.188 MiB (8 GB), dos quais 0,6 GB a 1,3 GB já estavam ocupados antes de cada execução; a VRAM é considerada saturada quando a ocupação total atinge 97\% da capacidade.}
+\newcommand{\RefQualidade}{PSNR: maior é melhor, sem limite superior (infinito para imagens idênticas). SSIM: no máximo 1, valor obtido por imagens idênticas. VMAF: de 0 a 100, maior é melhor; um vídeo comparado com ele mesmo resulta em cerca de 100.}
+\newcommand{\RefCriterios}{Limiares: H1, redução da latência de pelo menos 10\%, significativa pelo teste $t$ de Welch; H2, pico de VRAM de no máximo 90\% do da \textit{baseline}, sem saturação; H3, diferença média de no máximo 0,1 dB de PSNR, 0,001 de SSIM e 0,5 ponto de VMAF.}
 \makeatletter
 \renewcommand{\legend}[1]{%
   \M@gettitle{#1}%
@@ -986,7 +991,7 @@ Para verificar a equivalência, as saídas do modelo ONNX (executado pelo ONNX R
 1920 $\times$ 1088 & $9{,}8 \times 10^{-3}$ & $4{,}02 \times 10^{3}$ & $2{,}4 \times 10^{-6}$ \\
 \bottomrule
 \end{tabular}
-\legend{Fonte: Elaborado pelo autor (2026)}
+\legend{Erro relativo: erro absoluto máximo dividido pelo maior valor dos filtros. O valor 0 indica saídas idênticas; o FP32 representa cerca de sete dígitos significativos, de modo que erros relativos de $10^{-7}$ a $10^{-6}$ correspondem ao arredondamento da própria aritmética. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 % ---------------------------------------------------------------
@@ -1100,7 +1105,7 @@ A margem foi definida experimentalmente. Uma reimplementação em PyTorch do pro
 512 & 160 & 104,61 & 1 & 0,0002 & 1.509 & 747 \\
 \bottomrule
 \end{tabular}
-\legend{Dif. máx.: maior diferença entre os quadros de 8 bits, em níveis de intensidade. Ativações: pico de memória alocada pelo PyTorch, sem os \textit{buffers} fixos do motor. Fonte: Elaborado pelo autor (2026)}
+\legend{Comparação com o processamento do quadro inteiro. PSNR: maior é melhor, e $\infty$ indica saída idêntica. Dif. máx.: maior diferença entre os quadros de 8 bits, em níveis de intensidade, de 0 (idênticos) a 255. Pixels dif.: fração dos valores que diferem; 0 indica saída idêntica. Ativações: pico de memória alocada pelo PyTorch, sem os \textit{buffers} fixos do motor. Ativações e ms/quadro: menor é melhor. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 Sem margem, os blocos produzem erros de até 98 níveis de intensidade nas suas bordas. A partir de 96 pixels, a maior diferença em relação ao quadro inteiro passa a ser de um único nível, em menos de 0,002\% dos pixels, a mesma ordem do arredondamento observado entre o motor C++ e a implementação original (Seção~\ref{sec:equivalencia}). Por isso, adotou-se $M = 96$. A tabela também evidencia o compromisso central da estratégia: blocos menores reduzem o pico de memória, mas aumentam o tempo, pois a margem de cada bloco é processada repetidas vezes. Com blocos de 512 pixels e margem de 96, o pico de ativações caiu 52\% e o tempo aumentou 49\% em relação ao quadro inteiro.
@@ -1141,7 +1146,7 @@ Sem padrão de memória & 305,7 & 4.743 & 650,6 & 1.831 \\
 Todas as opções, exceto potências de dois & 341,0 & 4.743 & 742,2 & 1.291 \\
 \bottomrule
 \end{tabularx}
-\legend{Média de sete medições por configuração. Em negrito, a configuração adotada na terceira versão. Fonte: Elaborado pelo autor (2026)}
+\legend{Média de sete medições por configuração. Em negrito, a configuração adotada na terceira versão. ms: tempo médio por quadro; MiB: consumo de VRAM; nos dois, menor é melhor. A GPU tem 8.188 MiB (8 GB). Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 Adotou-se a combinação sem padrão de memória e com a \textit{arena} em potências de dois, a de menor memória sem custo de tempo nos blocos; no quadro inteiro, ela consome 3\% a mais que a desativação isolada do padrão de memória. Nas resoluções mais altas, o efeito foi maior: com blocos de 1024 pixels, o pico caiu de 5.805 MiB para 3.501 MiB em 1440p e, em 2160p, de 7.247 MiB, com a VRAM saturada, para 4.655 MiB, sem saturação. O quadro inteiro em 1440p continuou saturando a VRAM em todas as configurações, pois apenas os tensores de filtros ocupam cerca de 3 GB. Em todos os casos, a saída diferiu da configuração anterior em no máximo um nível de intensidade, a mesma diferença observada entre duas execuções idênticas, decorrente da escolha de algoritmos do cuDNN.
@@ -1205,7 +1210,7 @@ Esta seção apresenta os resultados da primeira versão do motor C++/CUDA, que 
 2160p & Python/PyTorch & 64.900,5 $\pm$ 3.452,8$^{*}$ & 0,02 & 7.133$^{*}$ & 31,44 & 0,9323 & 50,33 \\
 \bottomrule
 \end{tabular}
-\legend{Latência: média $\pm$ desvio padrão. $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: média $\pm$ desvio padrão. \RefDesempenho{} \RefVRAM{} \RefQualidade{} $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 % ---------------------------------------------------------------
@@ -1322,7 +1327,7 @@ A segunda versão do motor (Seção~\ref{sec:tiling}) foi avaliada em uma nova b
 2160p & Python/PyTorch & 67.031,9 $\pm$ 2.189,8$^{*}$ & 0,01 & 7.270$^{*}$ \\
 \bottomrule
 \end{tabular}
-\legend{Latência: média $\pm$ desvio padrão (27 medições; três em 2160p). $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: média $\pm$ desvio padrão (27 medições; três em 2160p). \RefDesempenho{} \RefVRAM{} $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 A fidelidade visual não foi afetada pelos blocos. Em todas as resoluções e tamanhos de bloco, as métricas coincidiram com as da \textit{baseline}: a diferença média quadro a quadro foi inferior a 0,001 dB de PSNR e a $10^{-5}$ de SSIM, e de no máximo 0,007 ponto de VMAF. Por isso, a tabela omite as métricas de qualidade, que são as mesmas da Tabela~\ref{tab:resultados_gta}.
@@ -1368,7 +1373,7 @@ O custo em latência dos blocos tem duas origens, separadas na Tabela~\ref{tab:s
 2160p & Blocos 256 & 135 & 2,91$\times$ & 3.332,4 & 138,1 \\
 \bottomrule
 \end{tabular}
-\legend{Área processada: soma das áreas dos recortes (bloco com margem) em relação à área do quadro. Ms por megapixel: tempo de inferência dividido pela área processada. $^{*}$ VRAM saturada. Fonte: Elaborado pelo autor (2026)}
+\legend{Área processada: soma das áreas dos recortes (bloco com margem) em relação à área do quadro; 1,00$\times$ indica que nenhuma região é processada mais de uma vez. Ms por megapixel: tempo de inferência dividido pela área processada. Nas três últimas colunas, menor é melhor. $^{*}$ VRAM saturada. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 % ---------------------------------------------------------------
@@ -1411,7 +1416,7 @@ A terceira versão do motor (Seção~\ref{sec:fp16}) foi avaliada em uma terceir
 2160p & Python/PyTorch & 66.594,4 $\pm$ 1.768,6$^{*}$ & 0,02 & 7.357$^{*}$ \\
 \bottomrule
 \end{tabular}
-\legend{Latência: média $\pm$ desvio padrão (27 medições; três em 2160p). Blocos com margem de 96 pixels. $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: média $\pm$ desvio padrão (27 medições; três em 2160p). Blocos com margem de 96 pixels. \RefDesempenho{} \RefVRAM{} $^{*}$ VRAM saturada: o excedente foi alocado na memória principal e não é contabilizado pela NVML. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 A meia precisão não alterou a fidelidade visual. Em todas as resoluções, a diferença média quadro a quadro em relação à \textit{baseline} foi inferior a 0,001 dB de PSNR e a $10^{-5}$ de SSIM; no VMAF, foi de no máximo 0,013 ponto de 720p a 1440p e de 0,063 ponto em 2160p, em que apenas quatro quadros são avaliados.
@@ -1460,7 +1465,7 @@ A comparação entre o motor em FP16 e a \textit{baseline} em FP32 reúne dois e
 2160p & 63.091,4$^{*}$ & 7.345$^{*}$ & 55.297,1$^{*}$ & 7.377$^{*}$ & \multicolumn{2}{c}{falhou} & 9.463,9$^{*}$ & 7.342$^{*}$ \\
 \bottomrule
 \end{tabular}
-\legend{Média de 27 medições (três em 2160p). $^{*}$ VRAM saturada. O C++ FP32 em 1440p atingiu 96,5\% da capacidade, abaixo do limiar de 97\%, mas foi considerado saturado pelo tempo: a inferência levou 2.576 ms, como na bateria anterior, em que a mesma condição foi sinalizada, e a escala a partir de 1080p indicaria cerca de 545 ms. Fonte: Elaborado pelo autor (2026)}
+\legend{Média de 27 medições (três em 2160p). ms: tempo por quadro; MiB: consumo de VRAM; nos dois, menor é melhor. \RefVRAM{} $^{*}$ VRAM saturada. O C++ FP32 em 1440p atingiu 96,5\% da capacidade, abaixo do limiar de 97\%, mas foi considerado saturado pelo tempo: a inferência levou 2.576 ms, como na bateria anterior, em que a mesma condição foi sinalizada, e a escala a partir de 1080p indicaria cerca de 545 ms. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 \begin{figure}[H]
@@ -1493,7 +1498,7 @@ FP16 $\times$ FP32, no C++ & $-40{,}0\%$ & $-40{,}2\%$ & 53\% & 63\% \\
 C++ FP16 $\times$ Python FP32 & $-54{,}4\%$ & $-54{,}9\%$ & 72\% & 67\% \\
 \bottomrule
 \end{tabularx}
-\legend{Todas as reduções de latência são significativas pelo teste $t$ de Welch unilateral ($p < 0{,}001$). VRAM: pico do primeiro termo como fração do pico do segundo. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: variação do primeiro termo em relação ao segundo; valores negativos indicam redução. Todas as reduções de latência são significativas pelo teste $t$ de Welch unilateral ($p < 0{,}001$). VRAM: pico do primeiro termo como fração do pico do segundo; 100\% indica consumo igual, e valores menores, economia. Para comparação, os limiares da hipótese são uma redução de pelo menos 10\% na latência (H1) e uma fração de no máximo 90\% na VRAM (H2). Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 Quanto à memória, o resultado se inverte conforme a precisão: em FP32, o motor consome mais que o PyTorch (107\% em 1080p); em FP16, consome menos (80\%). Parte dessa diferença decorre de uma decisão de implementação: no motor, os filtros permanecem em FP16 na VRAM, enquanto a função de síntese original os converte para FP32. Essa parcela não foi isolada. A fidelidade também não foi afetada na \textit{baseline} em FP16: a diferença média para a \textit{baseline} em FP32 foi inferior a 0,001 dB de PSNR e a $10^{-5}$ de SSIM, e de no máximo 0,014 ponto de VMAF.
@@ -1522,7 +1527,7 @@ C++/CUDA FP16 & 37,22 & 34,46 & 0,9679 & 0,9590 \\
 Python/PyTorch & 37,22 & 34,46 & 0,9680 & 0,9590 \\
 \bottomrule
 \end{tabular}
-\legend{Middlebury: 12 sequências. Vimeo-90K: 200 trios sorteados do conjunto de teste. Fonte: Elaborado pelo autor (2026)}
+\legend{Middlebury: 12 sequências. Vimeo-90K: 200 trios sorteados do conjunto de teste. PSNR: maior é melhor, sem limite superior (infinito para imagens idênticas). SSIM: no máximo 1, valor obtido por imagens idênticas. Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 O \textit{script} de avaliação distribuído com o código de \citeonline{Niklaus2021}, executado no mesmo ambiente, resulta em 37,28 dB e 0,9681 no Middlebury. A diferença de 0,06 dB decorre apenas da conversão para 8 bits: o \textit{script} arredonda a saída da rede, enquanto o motor e o código de interpolação original a truncam. Esses conjuntos confirmam, portanto, em imagens de referência da literatura, a equivalência observada no vídeo do GTA VI.
@@ -1549,7 +1554,7 @@ H2: VRAM & $+46\%$ (3.138 contra 2.149 MiB) & $+45\%$ (6.648 contra 4.585 MiB) &
 H3: Fidelidade & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $< 10^{-6}$; VMAF $0{,}003$ & $|\Delta|$ médio: PSNR $< 0{,}0001$ dB; SSIM $0$; VMAF $< 0{,}001$ & Atendido \\
 \bottomrule
 \end{tabularx}
-\legend{Variações do motor C++ em relação à \textit{baseline}. Teste $t$ de Welch unilateral com 27 medições por implementação. Fonte: Elaborado pelo autor (2026)}
+\legend{Variações do motor C++ em relação à \textit{baseline}; na latência, valores negativos indicam redução. Teste $t$ de Welch unilateral com 27 medições por implementação. \RefCriterios{} Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 Na primeira versão do motor, a hipótese foi, portanto, \textbf{confirmada apenas parcialmente}. A redução de latência foi observada nas resoluções em que a VRAM é suficiente, com margem muito superior ao limiar de 10\% e sem qualquer perda de fidelidade visual. A redução do consumo de VRAM, porém, não se verificou: a simples transposição da inferência para C++ e ONNX Runtime, mantendo o processamento do quadro inteiro, consome mais memória que a implementação original e degrada mais rapidamente quando a memória se esgota. Em 1440p e 2160p, nenhum dos critérios de desempenho é atendido, pois as duas implementações saturam a VRAM e o motor C++ fica mais lento que a \textit{baseline}.
@@ -1574,7 +1579,7 @@ A segunda versão do motor introduz esse controle explícito, e a Tabela~\ref{ta
 256 pixels & $+209\%$ / $+195\%$ & 44\% / 22\% & Não atendido & Atendido \\
 \bottomrule
 \end{tabularx}
-\legend{Latência: variação em relação à \textit{baseline}. VRAM: pico do motor como fração do pico da \textit{baseline} (limiar de 90\%); nenhuma das execuções saturou a VRAM. Medições da segunda bateria. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: variação em relação à \textit{baseline}; valores positivos indicam aumento. VRAM: pico do motor como fração do pico da \textit{baseline}; nenhuma das execuções saturou a VRAM. Medições da segunda bateria. \RefCriterios{} Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 Nas resoluções em que os critérios foram definidos, nenhuma configuração atende H1 e H2 ao mesmo tempo. Os blocos de 512 e de 256 pixels cumprem o critério de memória, mas com latências maiores que as da \textit{baseline}; os blocos de 1024 pixels ficam a um ponto percentual do limiar de VRAM em 1080p e também são mais lentos que a \textit{baseline}. O compromisso entre memória e latência é, portanto, o resultado central da segunda versão: o motor com o quadro inteiro é a opção mais rápida enquanto a VRAM é suficiente, e o processamento em blocos é o que mantém o motor utilizável quando ela não é. Esse compromisso decorre principalmente do reprocessamento das margens (Tabela~\ref{tab:sobrecarga_blocos}), e não de uma ineficiência da execução em C++.
@@ -1601,7 +1606,7 @@ FP16, blocos 1024 & $-6{,}0\%$ / $-1{,}3\%$ & 73\% / 62\% & Não atendido & Aten
 FP16, blocos 512 & $+130\%$ / $+72\%$ & 42\% / 20\% & Não atendido & Atendido \\
 \bottomrule
 \end{tabularx}
-\legend{Latência: variação em relação à \textit{baseline}; as reduções do quadro inteiro são significativas pelo teste $t$ de Welch ($p < 0{,}001$), e a redução com blocos de 1024 pixels não atinge o limiar de 10\% (e, em 1080p, não é significativa, $p = 0{,}14$). VRAM: pico do motor como fração do pico da \textit{baseline}; nenhuma das execuções saturou a VRAM. Medições da terceira bateria. Fonte: Elaborado pelo autor (2026)}
+\legend{Latência: variação em relação à \textit{baseline}; as reduções do quadro inteiro são significativas pelo teste $t$ de Welch ($p < 0{,}001$), e a redução com blocos de 1024 pixels não atinge o limiar de 10\% (e, em 1080p, não é significativa, $p = 0{,}14$). VRAM: pico do motor como fração do pico da \textit{baseline}; nenhuma das execuções saturou a VRAM. Medições da terceira bateria. \RefCriterios{} Fonte: Elaborado pelo autor (2026)}
 \end{table}
 
 O motor em FP16 com o quadro inteiro é a primeira configuração a atender os três critérios simultaneamente em 720p e em 1080p: reduz a latência em mais da metade e o pico de VRAM em cerca de 30\%, com fidelidade equivalente à da implementação original. Esse resultado reúne dois efeitos, separados na Seção~\ref{sec:res_python_fp16}. Parte do ganho vem da precisão, que também acelera o PyTorch: em FP16, ele alcança o tempo do motor em FP32. Mas a forma de execução mantém uma vantagem independente: comparados na mesma precisão, o motor é cerca de 24\% mais rápido em FP32 e cerca de 40\% em FP16. Os critérios H1 e H2 também seriam atendidos pelo motor em FP16 tomando a \textit{baseline} em FP16 como referência, com redução de 39,8\% na latência e pico de 80\% em 1080p. Quanto à memória, o resultado não pode ser atribuído à troca de linguagem: em FP32, com o alocador ajustado, o motor ainda consome mais que a \textit{baseline} (107\% em 1080p), e a vantagem em FP16 inclui a decisão de manter os filtros em meia precisão também na síntese.
