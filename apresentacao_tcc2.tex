@@ -204,9 +204,9 @@
 \begin{frame}{Separabilidade: menos memória nos filtros}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
-      \includegraphics[width=\linewidth]{imagens/separabilidade.pdf}
+      \includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{imagens/separabilidade.pdf}
       \vspace{2pt}
-      \small
+      \footnotesize
       \begin{itemize}
         \item Dois vetores 1D em vez de uma matriz 2D.
         \item 102 coeficientes por pixel, contra 2.601.
@@ -214,7 +214,7 @@
       \end{itemize}
     \end{column}
     \begin{column}{0.5\textwidth}
-      \includegraphics[width=\linewidth]{imagens/memoria_filtros.pdf}
+      \includegraphics[width=\linewidth,height=0.36\textheight,keepaspectratio]{imagens/memoria_filtros.pdf}
       \vspace{2pt}
       \small
       \begin{center}
@@ -227,7 +227,7 @@
 
 \begin{frame}{O gargalo: memória da GPU}
   \centering
-  \includegraphics[width=0.92\textwidth]{imagens/host_device.pdf}
+  \includegraphics[width=0.92\textwidth,height=0.5\textheight,keepaspectratio]{imagens/host_device.pdf}
   \vspace{4pt}
   \raggedright\small
   \begin{itemize}
@@ -272,7 +272,7 @@
 \section{Objetivos e método}
 % ===============================================================
 \begin{frame}{Objetivos}
-  \small
+  \footnotesize
   \begin{block}{Objetivo geral}
     Determinar em que medida um motor nativo em C++ e CUDA reduz a latência e o pico de VRAM em uma GPU de 8 GB, em relação à implementação original, mantendo a fidelidade visual.
   \end{block}
@@ -868,11 +868,11 @@
 \begin{frame}{Apoio: estágios e PSNR por quadro}
   \begin{columns}[T]
     \begin{column}{0.5\textwidth}
-      \includegraphics[width=\linewidth]{imagens/etapas_cpp.pdf}
+      \includegraphics[width=\linewidth,height=0.55\textheight,keepaspectratio]{imagens/etapas_cpp.pdf}
       \nota{A inferência responde por cerca de 90\% do tempo em 1080p; as transferências e o pré-processamento somam menos de 1\%.}
     \end{column}
     \begin{column}{0.5\textwidth}
-      \includegraphics[width=\linewidth]{imagens/psnr_quadros.pdf}
+      \includegraphics[width=\linewidth,height=0.55\textheight,keepaspectratio]{imagens/psnr_quadros.pdf}
       \nota{As curvas têm o mesmo formato nas três resoluções: a dificuldade depende do conteúdo de cada instante.}
     \end{column}
   \end{columns}
@@ -880,7 +880,7 @@
 
 \begin{frame}{Apoio: fluxo óptico (RAFT)}
   \centering
-  \includegraphics[width=\textwidth]{imagens/fluxo_optico.pdf}
+  \includegraphics[width=\textwidth,height=0.48\textheight,keepaspectratio]{imagens/fluxo_optico.pdf}
   \fontefig{elaborado pelo autor, com o RAFT da biblioteca torchvision e a sequência Beanbags (BAKER et al., 2011).}
   \vspace{4pt}
   \raggedright\small
@@ -942,20 +942,17 @@ __device__ float accumulate_frame(const float* frame, const Filter* ver,
 {
     constexpr int R = K / 2;               // raio = 25
     float h[K]; int sx[K]; float hor_sum = 0.0f;
-
     for (int fx = 0; fx < K; ++fx) {       // le o filtro horizontal uma vez
         h[fx]  = to_float(hor[fx * filter_plane + filter_pixel]);
         sx[fx] = min(max(x + fx - R, 0), width - 1);   // borda replicada
         hor_sum += h[fx];
     }
-
     float ver_sum = 0.0f;
     for (int fy = 0; fy < K; ++fy) {       // para cada linha da vizinhanca
         const float v = to_float(ver[fy * filter_plane + filter_pixel]);
         ver_sum += v;
         const int sy = min(max(y + fy - R, 0), height - 1);
         const float* row = frame + (size_t)sy * width;
-
         float row_b = 0, row_g = 0, row_r = 0;
         for (int fx = 0; fx < K; ++fx) {   // convolucao horizontal da linha
             row_b += h[fx] * row[sx[fx]];
